@@ -1,19 +1,26 @@
 package entities;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import enums.Direction;
 import enums.Effects;
 import game.Game;
 import gameutil.Position;
+import javafx.scene.input.KeyCode;
 
 public class Snake extends Position {
 
 	private static List<Snake> snakes = new ArrayList<>();
-	private List<Position> body = new ArrayList<>();
-	private List<Position> headlessBody = new ArrayList<>();
-	private List<Effect> effects = new ArrayList<>();
+	private static List<List<KeyCode>> playerKeys = 
+		Arrays.asList(Arrays.asList(KeyCode.LEFT, KeyCode.UP, KeyCode.RIGHT, KeyCode.DOWN),
+		Arrays.asList(KeyCode.A, KeyCode.W, KeyCode.D, KeyCode.S));
+	
+	private List<Position> body;
+	private List<Position> headlessBody;
+	private List<Effect> effects;
+	private List<KeyCode> keys;
 
 	private Direction direction;
 	private int framesPerStep;
@@ -25,6 +32,9 @@ public class Snake extends Position {
 		super(startX, startY);
 		this.direction = direction;
 		this.framesPerStep = framesPerStep;
+		body = new ArrayList<>();
+		headlessBody = new ArrayList<>();
+		effects = new ArrayList<>();
 		speedVal = 0;
 		removeBody = 0;
 		deadFrames = -1;
@@ -33,7 +43,11 @@ public class Snake extends Position {
 			incBody();
 			getTail().incPositionByDirection(direction.getReverseDirection());
 		}
+		keys = playerKeys.get(snakes.size());
 	}
+	
+	public List<KeyCode> getKeys()
+		{ return keys; }
 	
 	public static List<Snake> getSnakes()
 		{ return snakes; }
@@ -54,6 +68,13 @@ public class Snake extends Position {
 				effects.remove(e);
 				return;
 			}
+	}
+	
+	public Boolean isUnderEffect(Effects effect) {
+		for (Effect e : effects)
+			if (e.getEffect() == effect)
+				return true;
+		return false;
 	}
 	
 	public Direction getDirection()
@@ -86,6 +107,10 @@ public class Snake extends Position {
 		if (value < 0) {
 			removeBody = Math.abs(value);
 			return;
+		}
+		while (value > 0 && removeBody > 0) {
+			removeBody--;
+			value--;
 		}
 		while (--value >= 0)
 			body.add(new Position(getTail()));
@@ -120,19 +145,25 @@ public class Snake extends Position {
 			if (effects.get(n).decDuration(1) <= 0)
 				effects.remove(n--);
 	}
+
+	private void updateHeadlessBody() {
+		headlessBody = new ArrayList<>(body);
+		headlessBody.remove(0);
+	}
 	
 	public void move() {
 		decEffectsDuration();
-		if (removeBody > 0 && --removeBody >= 0)
+		if (removeBody > 0 && --removeBody >= 0 && body.size() > 3) {
 			body.remove(body.size() - 1);
+			updateHeadlessBody();
+		}
 		if (isDead() && deadFrames < getBodySize())
 			deadFrames++;
 		else if (!isDead() && ++speedVal >= framesPerStep) {
 			speedVal = 0;
 			for (int n = getBodySize() - 1; n > 0; n--)
 				body.get(n).setPosition(body.get(n - 1).getPosition());
-			headlessBody = new ArrayList<>(body);
-			headlessBody.remove(0);
+			updateHeadlessBody();
 			getHead().incPositionByDirection(direction);
 			if (Game.getWalls().contains(getHead()) || getHeadlessBody().contains(getHead()))
 				deadFrames = 0;

@@ -57,7 +57,7 @@ public class Fruit extends Position {
 			if (!allowedEffects.isEmpty() && new SecureRandom().nextInt(100) + 1 <= effectFruitProc)
 				fruit.setEffect(allowedEffects.get(new SecureRandom().nextInt(allowedEffects.size())));
 			else
-				fruit.setIncSizeBy(new SecureRandom().nextInt(9) + 1 * (new SecureRandom().nextInt(100) + 1 <= incSizeFruitProc ? 1 : -1));
+				fruit.setIncSizeBy((new SecureRandom().nextInt(9) + 1) * (new SecureRandom().nextInt(100) + 1 <= incSizeFruitProc ? 1 : -1));
 			addFruit(fruit);
 			addedFruitsPosition.add(fruit);
 		}
