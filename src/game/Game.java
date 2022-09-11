@@ -93,7 +93,9 @@ public class Game {
 					Fruit newFruit = Fruit.addRandomFruit(0 ,0 ,(Main.getScreenWidth() - 20) / dotSize, (Main.getScreenHeight() - 40) / dotSize, getSnakes());
 					fruitCanvasDrawFruit(newFruit);
 					if (fruit.getEffect() != null) {
-						if (fruit.getEffect().causeEffectOnOthers() != null)
+						if (fruit.getEffect() == Effects.CLEAR_EFFECTS)
+							snake.clearEffects();
+						else if (fruit.getEffect().causeEffectOnOthers() != null)
 							getRandomOpponentSnake(snake).addEffect(fruit.getEffect().causeEffectOnOthers());
 						else if (fruit.getEffect().isFriendly())
 							snake.addEffect(fruit.getEffect());
