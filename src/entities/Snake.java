@@ -147,10 +147,8 @@ public class Snake extends Position {
 				effects.remove(n--);
 	}
 
-	private void updateHeadlessBody() {
-		headlessBody = new ArrayList<>(body);
-		headlessBody.remove(0);
-	}
+	private void updateHeadlessBody()
+		{ headlessBody = new ArrayList<>(body.subList(1, body.size())); }
 	
 	public void move() {
 		if (removeBody > 0 && --removeBody >= 0 && body.size() > 3) {
@@ -167,14 +165,29 @@ public class Snake extends Position {
 			decEffectsDuration();
 			getHead().incPositionByDirection(direction);
 			if (Game.getWalls().contains(getHead()) ||
-					getHeadlessBody().contains(getHead()) ||
+					(!isUnderEffect(Effects.CAN_EAT_OTHERS) &&
+					(getHeadlessBody().contains(getHead()) ||
 					!snakes.stream()
 					.filter(s -> s != this && s.getBody().contains(getHead()))
-					.collect(Collectors.toList()).isEmpty()) {
+					.collect(Collectors.toList()).isEmpty()))) {
 						deadFrames = 0;
 						effects.clear();
 			}
+			if (isUnderEffect(Effects.CAN_EAT_OTHERS))
+				for (Snake snake : snakes) {
+					Boolean itsMe = snake == this;
+					for (int n = itsMe ? 4 : 0; n < snake.getBodySize(); n++)
+						if (getHead().equals(snake.getBody().get(n))) {
+							for (int n2 = n; n2 < snake.getBodySize(); n2++)
+								Game.getWalls().add(snake.getBody().get(n2).getPosition());
+							Game.drawWalls();
+							snake.cutBodyFrom(n);
+						}
+				}
 		}
 	}
+
+	private void cutBodyFrom(int pos)
+		{ body = body.subList(0, pos); }
 
 }

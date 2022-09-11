@@ -143,6 +143,11 @@ public class Game {
 			walls.add(new Position(x, 0));
 			walls.add(new Position(x, Main.getScreenHeight() / dotSize - 3));
 		}
+		drawWalls();
+	}
+	
+	public static void drawWalls() {
+		GraphicsContext gc = Main.getGameBGCanvas().getGraphicsContext2D();
 		gc.setImageSmoothing(false);
 		for (Position wall : walls)
 			gc.drawImage(sprites, 45, 30, 15, 15, wall.getX() * dotSize, wall.getY() * dotSize, dotSize, dotSize);
