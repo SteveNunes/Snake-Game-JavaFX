@@ -11,6 +11,7 @@ import entities.Fruit;
 import entities.Snake;
 import enums.Direction;
 import enums.Effects;
+import enums.GameMode;
 import gameutil.FPSHandler;
 import gameutil.GameTools;
 import gameutil.KeyHandler;
@@ -32,6 +33,11 @@ public class Game {
 	private static List<Snake> snakes = new ArrayList<>();
 	private static Menu mainMenu;
 	private static FPSHandler fpsHandler = new FPSHandler(60, 2);
+	private static GameMode gameMode = GameMode.LOCAL_MULTIPLAYER;
+	private static Snake mySnake = null;
+	
+	public static GameMode getGameMode()
+		{ return gameMode; }
 	
 	public static int getDotSize()
 		{ return dotSize; }
@@ -40,7 +46,7 @@ public class Game {
 		{ dotSize = size; }
 	
 	private static void setupGame() {
-		getSnakes().add(new Snake(Main.getScreenWidth() / 10 * 7 / dotSize, Main.getScreenHeight() / 3 / dotSize, 3, Direction.DOWN, 30));
+		getSnakes().add(mySnake = new Snake(Main.getScreenWidth() / 10 * 7 / dotSize, Main.getScreenHeight() / 3 / dotSize, 3, Direction.DOWN, 30));
 		getSnakes().add(new Snake(Main.getScreenWidth() / 10 * 3 / dotSize, Main.getScreenHeight() / 3 / dotSize, 3, Direction.DOWN, 30));
 		generateBGCanvas();
 		generateFruitCanvas();
@@ -139,7 +145,8 @@ public class Game {
 	
 	private static void drawSnake(int id) {
 		Snake snake = getSnakes().get(id);
-		if (fpsHandler.ableToDraw()) {
+		if (fpsHandler.ableToDraw() && (!snake.isUnderEffect(Effects.INVISIBLE_TO_MYSELF) ||
+				mySnake != null && snake == mySnake)) {
 			GraphicsContext gc = Main.getSnakeCanvas().getGraphicsContext2D();
 			gc.setImageSmoothing(false);
 			Position position = new Position();
@@ -199,7 +206,7 @@ public class Game {
 	private static void generateFruitCanvas() {
 //		for (Effects effect : Effects.getListOfAll())
 //			Fruit.addEffectToAllowedEffects(effect);
-		Fruit.addEffectToAllowedEffects(Effects.CANT_SPEED_UP_HOLDING_KEY);
+		Fruit.addEffectToAllowedEffects(Effects.INVISIBLE_TO_MYSELF);
 		Fruit.addRandomFruits(0 ,0 ,(Main.getScreenWidth() - 20) / dotSize, (Main.getScreenHeight() - 40) / dotSize, 20, getSnakes())
 			.forEach(fruit -> fruitCanvasDrawFruit(fruit));
 	}
