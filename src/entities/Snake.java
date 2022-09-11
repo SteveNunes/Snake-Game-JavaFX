@@ -150,23 +150,29 @@ public class Snake extends Position {
 	private void updateHeadlessBody()
 		{ headlessBody = new ArrayList<>(body.subList(1, body.size())); }
 	
-	public void move() {
+	public void move(int keyPressedType) {
+		/**
+		 * keyPressedType == -1 - Chamado internamente
+		 * keyPressedType == 0 - Chamado por pressão única de tecla
+		 * keyPressedType == 1 - Chamado por pressão pressionada de tecla
+		 */
 		if (removeBody > 0 && --removeBody >= 0 && body.size() > 3) {
 			body.remove(body.size() - 1);
 			updateHeadlessBody();
 		}
 		if (isDead() && deadFrames < getBodySize())
 			deadFrames++;
-		else if (!isDead() && ++speedVal >= framesPerStep) {
-			speedVal = 0;
-			for (int n = getBodySize() - 1; n > 0; n--)
-				body.get(n).setPosition(body.get(n - 1).getPosition());
-			getHead().incPositionByDirection(direction);
-			updateHeadlessBody();
-			decEffectsDuration();
+		else if (!isDead() && (!isUnderEffect(Effects.ONLY_MOVE_IF_CONSTANTLY_PRESS) || keyPressedType == 0) 
+							&& ++speedVal >= framesPerStep) {
+								speedVal = 0;
+								for (int n = getBodySize() - 1; n > 0; n--)
+									body.get(n).setPosition(body.get(n - 1).getPosition());
+								getHead().incPositionByDirection(direction);
+								updateHeadlessBody();
+								decEffectsDuration();
 		}
 	}
-
+	
 	public void dropBodyAsWall(int pos) {
 		Game.drawWalls(body.subList(pos, body.size()));
 		cutBodyFrom(pos);

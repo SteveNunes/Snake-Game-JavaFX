@@ -54,6 +54,7 @@ public class Game {
 			for (int n = 0; n < 4; n++)
 				if (keyCode == snake.getKeys().get(n) && dirs.get(n) != snake.getDirection().getReverseDirection()) {
 					snake.setDirection(dirs.get(n));
+					snake.move(isRepeated ? 1 : 0);
 					break;
 				}
 	}
@@ -156,7 +157,7 @@ public class Game {
 			int sprY = snake.isUnderEffect(Effects.CAN_EAT_OTHERS) ? (fpsHandler.getElapsedFrames() / 5 % 2 == 0 ? 90 : 105) : 75;
 			gc.drawImage(sprites, sprX, sprY, 15, 15, snake.getHead().getX() * dotSize, snake.getHead().getY() * dotSize, dotSize, dotSize);
 		}
-		snake.move();
+		snake.move(-1);
 	}
 
 	private static void fruitCanvasDrawFruit(Fruit fruit) {
@@ -199,7 +200,7 @@ public class Game {
 	private static void generateFruitCanvas() {
 //		for (Effects effect : Effects.getListOfAll())
 //			Fruit.addEffectToAllowedEffects(effect);
-		Fruit.addEffectToAllowedEffects(Effects.MAKE_OTHER_DROP_BODY_AS_WALL_AFTER_FEW_STEPS);
+		Fruit.addEffectToAllowedEffects(Effects.ONLY_MOVE_IF_CONSTANTLY_PRESS);
 		Fruit.addRandomFruits(0 ,0 ,(Main.getScreenWidth() - 20) / dotSize, (Main.getScreenHeight() - 40) / dotSize, 20, getSnakes())
 			.forEach(fruit -> fruitCanvasDrawFruit(fruit));
 	}
