@@ -26,8 +26,9 @@ public enum Effects {
 	CANT_SPEED_UP_HOLDING_KEY('Q'),
 	CANT_EAT_FRUITS('R'),
 	ONLY_MOVE_IF_CONSTANTLY_PRESS('S'),
-	DROP_BODY_AS_WALL_AFTER_FEW_MOVES('T'),
-	CAN_EAT_OTHERS('U');
+	DROP_BODY_AS_WALL_AFTER_FEW_STEPS('T'),
+	MAKE_OTHER_DROP_BODY_AS_WALL_AFTER_FEW_STEPS('U'),
+	CAN_EAT_OTHERS('V');
 	
 	final char value;
 	
@@ -36,30 +37,37 @@ public enum Effects {
 		REVERSE_CLOCKWISE_CONTROLS, MIN_SPEED, QUARTER_SPEED, HALF_SPEED, STOP,
 		DOUBLE_SPEED, QUAD_SPEED, MAX_SPEED, CONSTANTLY_CHANGES_SPEED_TO_RANDOM,
 		INVISIBLE_TO_MYSELF, INVISIBLE_TO_OTHERS, CANT_SPEED_UP_HOLDING_KEY,
-		CANT_EAT_FRUITS, ONLY_MOVE_IF_CONSTANTLY_PRESS, DROP_BODY_AS_WALL_AFTER_FEW_MOVES);
+		CANT_EAT_FRUITS, ONLY_MOVE_IF_CONSTANTLY_PRESS, DROP_BODY_AS_WALL_AFTER_FEW_STEPS,
+		MAKE_OTHER_DROP_BODY_AS_WALL_AFTER_FEW_STEPS);
 	
 	final static Map<Effects, Integer> effectsDuration = Stream.of(new Object[][] {
+		{CLEAR_EFFECTS, 0},
 		{SWAP_2_OPPONENT_POSITIONS, 0},
 		{TRANSFORM_FRUITS_INTO_WALL, 0},
-		{REVERSE_CONTROLS, 60},
-		{CLOCKWISE_CONTROLS, 60},
-		{REVERSE_CLOCKWISE_CONTROLS, 60},
-		{MIN_SPEED, 60},
-		{QUARTER_SPEED, 60},
-		{HALF_SPEED, 60},
-		{STOP, 30},
+		{REVERSE_CONTROLS, -60},
+		{CLOCKWISE_CONTROLS, -60},
+		{REVERSE_CLOCKWISE_CONTROLS, -60},
+		{MIN_SPEED, -60},
+		{QUARTER_SPEED, -60},
+		{HALF_SPEED, -60},
+		{STOP, -30},
 		{DOUBLE_SPEED, 60},
 		{QUAD_SPEED, 60},
 		{MAX_SPEED, 60},
-		{CONSTANTLY_CHANGES_SPEED_TO_RANDOM, 60},
-		{INVISIBLE_TO_MYSELF, 30},
+		{CONSTANTLY_CHANGES_SPEED_TO_RANDOM, -60},
+		{INVISIBLE_TO_MYSELF, -30},
 		{INVISIBLE_TO_OTHERS, 30},
-		{CANT_SPEED_UP_HOLDING_KEY, 60},
-		{CANT_EAT_FRUITS, 60},
+		{CANT_SPEED_UP_HOLDING_KEY, -60},
+		{CANT_EAT_FRUITS, -60},
 		{CAN_EAT_OTHERS, 30},
-		{ONLY_MOVE_IF_CONSTANTLY_PRESS, 60},
-		{DROP_BODY_AS_WALL_AFTER_FEW_MOVES, 0}})
+		{ONLY_MOVE_IF_CONSTANTLY_PRESS, -60},
+		{DROP_BODY_AS_WALL_AFTER_FEW_STEPS, 10},
+		{MAKE_OTHER_DROP_BODY_AS_WALL_AFTER_FEW_STEPS, 0}})
 			.collect(Collectors.toMap(data -> (Effects) data[0], data -> (Integer) data[1]));
+	
+	final static Map<Effects, Effects> causeEffectOnOthers = Stream.of(new Object[][] {
+		{MAKE_OTHER_DROP_BODY_AS_WALL_AFTER_FEW_STEPS, DROP_BODY_AS_WALL_AFTER_FEW_STEPS}})
+			.collect(Collectors.toMap(data -> (Effects) data[0], data -> (Effects) data[1]));
 	
 	Effects(char val)
 		{ value = val; }
@@ -67,8 +75,22 @@ public enum Effects {
 	public char getValue()
 		{ return value; }
 	
-	public static int getDuration(Effects effect)
-		{ return effectsDuration.get(effect); }
+	public static Boolean isFriendly(Effects effect)
+		{ return effectsDuration.get(effect) >= 0; }
+	
+	public Boolean isFriendly()
+		{ return isFriendly(this); }
+
+	public static Effects causeEffectOnOthers(Effects effect)
+		{ return !causeEffectOnOthers.containsKey(effect) ? null : causeEffectOnOthers.get(effect); }
+	
+	public Effects causeEffectOnOthers()
+		{ return causeEffectOnOthers(this); }
+
+	public static int getDuration(Effects effect) {
+		int val = effectsDuration.get(effect);
+		return Math.abs(val);
+	}
 	
 	public int getDuration()
 		{ return getDuration(this); }
