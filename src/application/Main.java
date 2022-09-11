@@ -13,7 +13,8 @@ public class Main extends Application {
 	private final static int screenW = 800;
 	private final static int screenH = 600;
 	private static Canvas gameBGCanvas;
-	private static Canvas gameGameCanvas;
+	private static Canvas gameFruitCanvas;
+	private static Canvas gameSnakeCanvas;
 	private static Stage mainStage;
 	private static Scene mainScene;
 	private static Boolean windowIsOpen;
@@ -30,14 +31,17 @@ public class Main extends Application {
 	public static Canvas getGameBGCanvas()
 		{ return gameBGCanvas; }	
 
-	public static Canvas getGameCanvas()
-		{ return gameGameCanvas; }
+	public static Canvas getGameFruitCanvas()
+		{ return gameFruitCanvas; }	
+
+	public static Canvas getSnakeCanvas()
+		{ return gameSnakeCanvas; }
 
 	public static int getScreenWidth()
-		{ return (int)gameGameCanvas.getWidth(); }
+		{ return (int)gameSnakeCanvas.getWidth(); }
 	
 	public static int getScreenHeight()
-		{ return (int)gameGameCanvas.getHeight(); }
+		{ return (int)gameSnakeCanvas.getHeight(); }
 
 	@Override
 	public void start(Stage stage) {
@@ -49,10 +53,11 @@ public class Main extends Application {
 		stage.setWidth(screenW - 6);
 		stage.setHeight(screenH - 2);
 		stage.setResizable(false);
-		gameGameCanvas = new Canvas(screenW, screenH);
+		gameSnakeCanvas = new Canvas(screenW, screenH);
 		gameBGCanvas = new Canvas(screenW, screenH);
+		gameFruitCanvas = new Canvas(screenW, screenH);
 		StackPane stackPane = new StackPane();
-		stackPane.getChildren().addAll(gameBGCanvas, gameGameCanvas);
+		stackPane.getChildren().addAll(gameBGCanvas, gameFruitCanvas, gameSnakeCanvas);
 		vBox.getChildren().add(stackPane);
 		windowIsOpen = true;
 		stage.setOnCloseRequest(e -> windowIsOpen = false);

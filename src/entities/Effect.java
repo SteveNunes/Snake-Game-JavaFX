@@ -5,35 +5,29 @@ import enums.Effects;
 public class Effect {
 
 	private Effects effect;
-	private int framesDuration;
+	private int stepsDuration;
 	private Snake from;
 	
-	public Effect(Effects effect, int framesDuration, Snake from) {
+	public Effect(Effects effect, Snake from) {
 		this.effect = effect;
-		this.framesDuration = framesDuration;
+		this.stepsDuration = Effects.getDuration(effect);
 		this.from = from;
 	}
 
-	public Effect(Effects effect, Snake from)
-		{ this(effect, -1, from); }
-
-	public Effect(Effects effect, int duration)
-		{ this(effect, duration, null); }
-
 	public Effect(Effects effect)
-		{ this(effect, -1, null); }
+		{ this(effect, null); }
 
 	public Effects getEffect()
 		{ return effect; }
 
-	public int getFramesDuration()
-		{ return framesDuration; }
+	public int getStepsDuration()
+		{ return stepsDuration; }
 	
 	public int decDuration(int duration)
-		{ return framesDuration -= duration; }
+		{ return stepsDuration -= duration; }
 
 	public int incDuration(int duration)
-		{ return framesDuration += duration; }
+		{ return stepsDuration += duration; }
 
 	public Snake getFrom()
 		{ return from; }

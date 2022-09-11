@@ -3,6 +3,7 @@ package entities;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import enums.Direction;
 import enums.Effects;
@@ -152,7 +153,6 @@ public class Snake extends Position {
 	}
 	
 	public void move() {
-		decEffectsDuration();
 		if (removeBody > 0 && --removeBody >= 0 && body.size() > 3) {
 			body.remove(body.size() - 1);
 			updateHeadlessBody();
@@ -164,9 +164,16 @@ public class Snake extends Position {
 			for (int n = getBodySize() - 1; n > 0; n--)
 				body.get(n).setPosition(body.get(n - 1).getPosition());
 			updateHeadlessBody();
+			decEffectsDuration();
 			getHead().incPositionByDirection(direction);
-			if (Game.getWalls().contains(getHead()) || getHeadlessBody().contains(getHead()))
-				deadFrames = 0;
+			if (Game.getWalls().contains(getHead()) ||
+					getHeadlessBody().contains(getHead()) ||
+					!snakes.stream()
+					.filter(s -> s != this && s.getBody().contains(getHead()))
+					.collect(Collectors.toList()).isEmpty()) {
+						deadFrames = 0;
+						effects.clear();
+			}
 		}
 	}
 
