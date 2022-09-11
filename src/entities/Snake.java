@@ -77,12 +77,18 @@ public class Snake extends Position {
 		{ return direction; }
 	
 	public void setDirection(Direction direction) {
-		if (!isDead()) {
+		if (!isDead() && (direction != this.direction || !isUnderEffect(Effects.CANT_SPEED_UP_HOLDING_KEY))) {
 			this.direction = direction;
 			speedVal = framesPerStep;
 		}
 	}
 	
+	public boolean canTurnToDirection(Direction direction) {
+		Position pos = new Position(getHead());
+		pos.incPositionByDirection(direction);
+		return !getHeadlessBody().contains(pos);
+	}
+
 	public int getFramesPerStep()
 		{ return framesPerStep; }
 
@@ -162,8 +168,9 @@ public class Snake extends Position {
 		}
 		if (isDead() && deadFrames < getBodySize())
 			deadFrames++;
-		else if (!isDead() && (!isUnderEffect(Effects.ONLY_MOVE_IF_CONSTANTLY_PRESS) || keyPressedType == 0) 
-							&& ++speedVal >= framesPerStep) {
+		else if (!isDead() && (!isUnderEffect(Effects.ONLY_MOVE_IF_CONSTANTLY_PRESS) || keyPressedType == 0) &&
+							(!isUnderEffect(Effects.CANT_SPEED_UP_HOLDING_KEY) || keyPressedType != 1) &&
+							++speedVal >= framesPerStep) {
 								speedVal = 0;
 								for (int n = getBodySize() - 1; n > 0; n--)
 									body.get(n).setPosition(body.get(n - 1).getPosition());

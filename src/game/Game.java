@@ -52,9 +52,8 @@ public class Game {
 		//System.out.println("PRESSED: " + keyCode);
 		for (Snake snake : getSnakes())
 			for (int n = 0; n < 4; n++)
-				if (keyCode == snake.getKeys().get(n) && dirs.get(n) != snake.getDirection().getReverseDirection()) {
+				if (keyCode == snake.getKeys().get(n) && snake.canTurnToDirection(dirs.get(n))) {
 					snake.setDirection(dirs.get(n));
-					snake.move(isRepeated ? 1 : 0);
 					break;
 				}
 	}
@@ -200,7 +199,7 @@ public class Game {
 	private static void generateFruitCanvas() {
 //		for (Effects effect : Effects.getListOfAll())
 //			Fruit.addEffectToAllowedEffects(effect);
-		Fruit.addEffectToAllowedEffects(Effects.ONLY_MOVE_IF_CONSTANTLY_PRESS);
+		Fruit.addEffectToAllowedEffects(Effects.CANT_SPEED_UP_HOLDING_KEY);
 		Fruit.addRandomFruits(0 ,0 ,(Main.getScreenWidth() - 20) / dotSize, (Main.getScreenHeight() - 40) / dotSize, 20, getSnakes())
 			.forEach(fruit -> fruitCanvasDrawFruit(fruit));
 	}
