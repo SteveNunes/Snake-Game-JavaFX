@@ -56,6 +56,9 @@ public class Main extends Application {
 		gameSnakeCanvas = new Canvas(screenW, screenH);
 		gameBGCanvas = new Canvas(screenW, screenH);
 		gameFruitCanvas = new Canvas(screenW, screenH);
+		gameSnakeCanvas.getGraphicsContext2D().setImageSmoothing(false);
+		gameBGCanvas.getGraphicsContext2D().setImageSmoothing(false);
+		gameFruitCanvas.getGraphicsContext2D().setImageSmoothing(false);
 		StackPane stackPane = new StackPane();
 		stackPane.getChildren().addAll(gameBGCanvas, gameFruitCanvas, gameSnakeCanvas);
 		vBox.getChildren().add(stackPane);

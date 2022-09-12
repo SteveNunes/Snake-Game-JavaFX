@@ -1,5 +1,6 @@
 package entities;
 
+import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -27,10 +28,10 @@ public class Snake extends Position {
 	private int deadFrames;
 	private int removeBody;
 	
-	public Snake(int startX, int startY, int initialBodySize, Direction direction, int framesPerStep) {
+	public Snake(int startX, int startY, int initialBodySize, Direction direction) {
 		super(startX, startY);
 		this.direction = direction;
-		this.framesPerStep = framesPerStep;
+		framesPerStep = Game.defaultFramesPerStep();
 		body = new ArrayList<>();
 		headlessBody = new ArrayList<>();
 		effects = new ArrayList<>();
@@ -76,17 +77,25 @@ public class Snake extends Position {
 	public Direction getDirection()
 		{ return direction; }
 	
+	private Boolean isUnderAnEffectThatNotAllowToAccelerate() {
+		for (Effect effect : effects)
+			if (effect.getEffect().notAbleToAcelerateByHoldingKey())
+				return true;
+		return false;
+	}
+	
 	public void setDirection(Direction direction) {
-		if (!isDead() && (direction != this.direction || !isUnderEffect(Effects.CANT_SPEED_UP_HOLDING_KEY))) {
+		if (!isDead() && (direction != this.direction || !isUnderAnEffectThatNotAllowToAccelerate())) {
 			this.direction = direction;
-			speedVal = framesPerStep;
+			if (!isUnderAnEffectThatNotAllowToAccelerate())
+				speedVal = framesPerStep;
 		}
 	}
 	
 	public boolean canTurnToDirection(Direction direction) {
 		Position pos = new Position(getHead());
 		pos.incPositionByDirection(direction);
-		return !getHeadlessBody().contains(pos);
+		return !pos.equals(body.get(1));
 	}
 
 	public int getFramesPerStep()
@@ -149,6 +158,11 @@ public class Snake extends Position {
 				effects.remove(n--);
 				if (effect == Effects.DROP_BODY_AS_WALL_AFTER_FEW_STEPS)
 					dropBodyAsWall(3);
+				if (effect == Effects.MIN_SPEED ||
+						effect == Effects.HALF_SPEED ||
+						effect == Effects.DOUBLE_SPEED ||
+						effect == Effects.QUAD_SPEED)
+							framesPerStep = Game.defaultFramesPerStep();
 			}
 		}
 	}
@@ -156,20 +170,23 @@ public class Snake extends Position {
 	private void updateHeadlessBody()
 		{ headlessBody = new ArrayList<>(body.subList(1, body.size())); }
 	
+	public void removeTailDot(int quantityToRemove) {
+		body = body.subList(0, body.size() - quantityToRemove);
+		updateHeadlessBody();
+	}
+	
 	public void move(int keyPressedType) {
 		/**
 		 * keyPressedType == -1 - Chamado internamente
 		 * keyPressedType == 0 - Chamado por pressão única de tecla
 		 * keyPressedType == 1 - Chamado por pressão pressionada de tecla
 		 */
-		if (removeBody > 0 && --removeBody >= 0 && body.size() > 3) {
-			body.remove(body.size() - 1);
-			updateHeadlessBody();
-		}
-		if (isDead() && deadFrames < getBodySize())
+		if (removeBody > 0 && --removeBody >= 0 && body.size() > 3)
+			removeTailDot(1);
+		if (isDead() && deadFrames <= getBodySize())
 			deadFrames++;
 		else if (!isDead() && (!isUnderEffect(Effects.ONLY_MOVE_IF_CONSTANTLY_PRESS) || keyPressedType == 0) &&
-							(!isUnderEffect(Effects.CANT_SPEED_UP_HOLDING_KEY) || keyPressedType != 1) &&
+							(!isUnderAnEffectThatNotAllowToAccelerate() || keyPressedType == -1) &&
 							++speedVal >= framesPerStep) {
 								speedVal = 0;
 								for (int n = getBodySize() - 1; n > 0; n--)
@@ -177,6 +194,16 @@ public class Snake extends Position {
 								getHead().incPositionByDirection(direction);
 								updateHeadlessBody();
 								decEffectsDuration();
+								if (isUnderEffect(Effects.CONSTANTLY_CHANGES_SPEED_TO_RANDOM))
+									framesPerStep = new SecureRandom().nextInt(105) + 15;
+								else if (isUnderEffect(Effects.QUAD_SPEED))
+									framesPerStep = 5;
+								else if (isUnderEffect(Effects.DOUBLE_SPEED))
+									framesPerStep = 15;
+								else if (isUnderEffect(Effects.HALF_SPEED))
+									framesPerStep = 60;
+								else if (isUnderEffect(Effects.MIN_SPEED))
+									framesPerStep = 120;
 		}
 	}
 	
