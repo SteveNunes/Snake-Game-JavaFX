@@ -84,7 +84,18 @@ public class Snake extends Position {
 		return false;
 	}
 	
+	private Direction directionThroughEffect(Direction direction) {
+		if (isUnderEffect(Effects.CLOCKWISE_CONTROLS))
+			return direction.getClockwiseDirection(2);
+		if (isUnderEffect(Effects.REVERSE_CLOCKWISE_CONTROLS))
+			return direction.getClockwiseDirection(-2);
+		if (isUnderEffect(Effects.REVERSE_CONTROLS))
+			return direction.getClockwiseDirection(4);
+		return direction;
+	}
+	
 	public void setDirection(Direction direction) {
+		direction = directionThroughEffect(direction);
 		if (!isDead() && (direction != this.direction || !isUnderAnEffectThatNotAllowToAccelerate())) {
 			this.direction = direction;
 			if (!isUnderAnEffectThatNotAllowToAccelerate())
@@ -93,6 +104,7 @@ public class Snake extends Position {
 	}
 	
 	public boolean canTurnToDirection(Direction direction) {
+		direction = directionThroughEffect(direction);
 		Position pos = new Position(getHead());
 		pos.incPositionByDirection(direction);
 		return !pos.equals(body.get(1));

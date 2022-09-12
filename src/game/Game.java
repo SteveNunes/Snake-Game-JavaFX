@@ -221,7 +221,7 @@ public class Game {
 	private static void generateFruitCanvas() {
 //		for (Effects effect : Effects.getListOfAll())
 //			Fruit.addEffectToAllowedEffects(effect);
-		Fruit.addEffectToAllowedEffects(Effects.MIN_SPEED);
+		Fruit.addEffectToAllowedEffects(Effects.REVERSE_CONTROLS);
 		Fruit.addRandomFruits(0 ,0 ,(Main.getScreenWidth() - 20) / dotSize, (Main.getScreenHeight() - 40) / dotSize, 20, getSnakes())
 			.forEach(fruit -> fruitCanvasDrawFruit(fruit));
 	}
