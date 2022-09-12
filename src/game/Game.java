@@ -50,8 +50,9 @@ public class Game {
 		{ dotSize = size; }
 	
 	private static void setupGame() {
-		getSnakes().add(mySnake = new Snake(Main.getScreenWidth() / 10 * 7 / dotSize, Main.getScreenHeight() / 3 / dotSize, 3, Direction.DOWN));
-		getSnakes().add(new Snake(Main.getScreenWidth() / 10 * 3 / dotSize, Main.getScreenHeight() / 3 / dotSize, 3, Direction.DOWN));
+		getSnakes().add(mySnake = new Snake(Main.getScreenWidth() / 10 * 8 / dotSize, Main.getScreenHeight() / 3 / dotSize, 3, Direction.DOWN));
+		getSnakes().add(new Snake(Main.getScreenWidth() / 10 * 5 / dotSize, Main.getScreenHeight() / 3 / dotSize, 3, Direction.DOWN));
+		getSnakes().add(new Snake(Main.getScreenWidth() / 10 * 2 / dotSize, Main.getScreenHeight() / 3 / dotSize, 3, Direction.DOWN));
 		generateBGCanvas();
 		generateFruitCanvas();
 	}
@@ -99,6 +100,9 @@ public class Game {
 		if (Main.windowsIsOpen())
 			GameTools.callMethodAgain(e -> gameLoop());
 	}
+	
+	private static int aliveSnakes()
+		{ return (int)snakes.stream().filter(s -> !s.isDead()).count(); }
 
 	private static void checkIfSnakeAteAFruit(Snake snake) {
 		if (Fruit.getFruitsPositions().contains(snake.getHead().getPosition()))
@@ -111,6 +115,13 @@ public class Game {
 					if (fruit.getEffect() != null) {
 						if (fruit.getEffect() == Effects.CLEAR_EFFECTS)
 							snake.clearEffects();
+						else if (fruit.getEffect() == Effects.SWAP_2_OPPONENT_POSITIONS) {
+							Snake opponent1 = aliveSnakes() == 2 ? snake : getRandomOpponentSnake(snake);
+							Snake opponent2 = getRandomOpponentSnake(opponent1);
+							while (opponent2 == snake)
+								opponent2 = getRandomOpponentSnake(opponent1);
+							opponent1.swapPositon(opponent2);
+						}
 						else if (fruit.getEffect().causeEffectOnOthers() != null)
 							getRandomOpponentSnake(snake).addEffect(fruit.getEffect().causeEffectOnOthers());
 						else if (fruit.getEffect().isFriendly())
@@ -221,7 +232,7 @@ public class Game {
 	private static void generateFruitCanvas() {
 //		for (Effects effect : Effects.getListOfAll())
 //			Fruit.addEffectToAllowedEffects(effect);
-		Fruit.addEffectToAllowedEffects(Effects.REVERSE_CONTROLS);
+		Fruit.addEffectToAllowedEffects(Effects.SWAP_2_OPPONENT_POSITIONS);
 		Fruit.addRandomFruits(0 ,0 ,(Main.getScreenWidth() - 20) / dotSize, (Main.getScreenHeight() - 40) / dotSize, 20, getSnakes())
 			.forEach(fruit -> fruitCanvasDrawFruit(fruit));
 	}

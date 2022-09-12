@@ -15,7 +15,8 @@ public class Snake extends Position {
 
 	private static List<List<KeyCode>> playerKeys = 
 		Arrays.asList(Arrays.asList(KeyCode.LEFT, KeyCode.UP, KeyCode.RIGHT, KeyCode.DOWN),
-		Arrays.asList(KeyCode.A, KeyCode.W, KeyCode.D, KeyCode.S));
+		Arrays.asList(KeyCode.A, KeyCode.W, KeyCode.D, KeyCode.S),
+		Arrays.asList(KeyCode.J, KeyCode.I, KeyCode.L, KeyCode.K));
 	
 	private List<Position> body;
 	private List<Position> headlessBody;
@@ -44,6 +45,18 @@ public class Snake extends Position {
 			getTail().incPositionByDirection(direction.getReverseDirection());
 		}
 		keys = playerKeys.get(Game.getSnakes().size());
+	}
+	
+	public void swapPositon(Snake anotherSnake) {
+		List<Position> me = new ArrayList<>(body);
+		List<Position> other = new ArrayList<>(anotherSnake.body);
+		body = other;
+		updateHeadlessBody();
+		anotherSnake.body = me;
+		anotherSnake.updateHeadlessBody();
+		Direction dir = direction;
+		direction = anotherSnake.direction;
+		anotherSnake.direction = dir;
 	}
 	
 	public List<KeyCode> getKeys()
