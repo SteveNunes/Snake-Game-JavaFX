@@ -30,7 +30,6 @@ public class Game {
 	private static Image arena = new Image("/sprites/arenas/01.png");
 	private static int dotSize = 20;
 	private static List<Position> walls = new ArrayList<>();
-	private static List<Snake> snakes = new ArrayList<>();
 	private static Menu mainMenu;
 	private static FPSHandler fpsHandler = new FPSHandler(60, 2);
 	private static GameMode gameMode = GameMode.LOCAL_MULTIPLAYER;
@@ -50,9 +49,9 @@ public class Game {
 		{ dotSize = size; }
 	
 	private static void setupGame() {
-		getSnakes().add(mySnake = new Snake(Main.getScreenWidth() / 10 * 8 / dotSize, Main.getScreenHeight() / 3 / dotSize, 3, Direction.DOWN));
-		getSnakes().add(new Snake(Main.getScreenWidth() / 10 * 5 / dotSize, Main.getScreenHeight() / 3 / dotSize, 3, Direction.DOWN));
-		getSnakes().add(new Snake(Main.getScreenWidth() / 10 * 2 / dotSize, Main.getScreenHeight() / 3 / dotSize, 3, Direction.DOWN));
+		Snake.getSnakes().add(mySnake = new Snake(Main.getScreenWidth() / 10 * 8 / dotSize, Main.getScreenHeight() / 3 / dotSize, 3, Direction.DOWN));
+		Snake.getSnakes().add(new Snake(Main.getScreenWidth() / 10 * 5 / dotSize, Main.getScreenHeight() / 3 / dotSize, 3, Direction.DOWN));
+		Snake.getSnakes().add(new Snake(Main.getScreenWidth() / 10 * 2 / dotSize, Main.getScreenHeight() / 3 / dotSize, 3, Direction.DOWN));
 		generateBGCanvas();
 		generateFruitCanvas();
 	}
@@ -67,7 +66,7 @@ public class Game {
 			Main.getSnakeCanvas().setVisible(!Main.getSnakeCanvas().isVisible());
 		if (keyCode == KeyCode.NUMPAD3)
 			Main.getGameFruitCanvas().setVisible(!Main.getGameFruitCanvas().isVisible());
-		for (Snake snake : getSnakes())
+		for (Snake snake : Snake.getSnakes())
 			for (int n = 0; n < 4; n++)
 				if (keyCode == snake.getKeys().get(n) && snake.canTurnToDirection(dirs.get(n))) {
 					snake.setDirection(dirs.get(n));
@@ -87,7 +86,7 @@ public class Game {
 			gc.clearRect(0, 0, Main.getScreenWidth(), Main.getScreenHeight());
 		}
 		
-		for (Snake snake : getSnakes()) {
+		for (Snake snake : Snake.getSnakes()) {
 			checkIfSnakeAteAFruit(snake);
 			checkIfSnakeColidedWithOtherSnake(snake);
 			drawSnake(snakeId);
@@ -102,7 +101,7 @@ public class Game {
 	}
 	
 	private static int aliveSnakes()
-		{ return (int)snakes.stream().filter(s -> !s.isDead()).count(); }
+		{ return (int)Snake.getSnakes().stream().filter(s -> !s.isDead()).count(); }
 
 	private static void checkIfSnakeAteAFruit(Snake snake) {
 		if (Fruit.getFruitsPositions().contains(snake.getHead().getPosition()))
@@ -110,11 +109,18 @@ public class Game {
 				if (fruit.getPosition().equals(snake.getHead().getPosition())) {
 					Fruit.getFruits().remove(fruit);
 					Main.getGameFruitCanvas().getGraphicsContext2D().clearRect(fruit.getX() * dotSize, fruit.getY() * dotSize, dotSize, dotSize);
-					Fruit newFruit = Fruit.addRandomFruit(0 ,0 ,(Main.getScreenWidth() - 20) / dotSize, (Main.getScreenHeight() - 40) / dotSize, getSnakes());
+					Fruit newFruit = Fruit.addRandomFruit(0 ,0 ,(Main.getScreenWidth() - 20) / dotSize, (Main.getScreenHeight() - 40) / dotSize, Snake.getSnakes());
 					fruitCanvasDrawFruit(newFruit);
 					if (fruit.getEffect() != null) {
 						if (fruit.getEffect() == Effects.CLEAR_EFFECTS)
 							snake.clearEffects();
+						else if (fruit.getEffect() == Effects.TRANSFORM_FRUITS_INTO_WALL) {
+							drawWalls(Fruit.getFruitsPositions());
+							for (Fruit del : Fruit.getFruits())
+								Main.getGameFruitCanvas().getGraphicsContext2D().clearRect(del.getX() * dotSize, del.getY() * dotSize, dotSize, dotSize);
+							Fruit.getFruits().clear();
+							generateFruitCanvas();
+						}
 						else if (fruit.getEffect() == Effects.SWAP_2_OPPONENT_POSITIONS) {
 							Snake opponent1 = aliveSnakes() == 2 ? snake : getRandomOpponentSnake(snake);
 							Snake opponent2 = getRandomOpponentSnake(opponent1);
@@ -136,9 +142,9 @@ public class Game {
 	}
 	
 	private static Snake getRandomOpponentSnake(Snake snake) {
-		Snake randomSnake = snakes.get(new SecureRandom().nextInt(snakes.size()));
+		Snake randomSnake = Snake.getSnakes().get(new SecureRandom().nextInt(Snake.getSnakes().size()));
 		while (snake != null && randomSnake == snake)
-			randomSnake = snakes.get(new SecureRandom().nextInt(snakes.size()));
+			randomSnake = Snake.getSnakes().get(new SecureRandom().nextInt(Snake.getSnakes().size()));
 		return randomSnake;
 	}
 
@@ -149,14 +155,14 @@ public class Game {
 		if (getWalls().contains(snake.getHead()) ||
 				(!snake.isUnderEffect(Effects.CAN_EAT_OTHERS) &&
 				(snake.getHeadlessBody().contains(snake.getHead()) ||
-				!snakes.stream()
+				!Snake.getSnakes().stream()
 				.filter(s -> s != snake && s.getBody().contains(snake.getHead()))
 				.collect(Collectors.toList()).isEmpty()))) {
 					snake.setDead(true);
 					snake.clearEffects();
 		}
 		if (snake.isUnderEffect(Effects.CAN_EAT_OTHERS))
-			for (Snake opponent : snakes) {
+			for (Snake opponent : Snake.getSnakes()) {
 				Boolean itsMe = opponent == snake;
 				for (int n = itsMe ? 4 : 0; n < opponent.getBodySize(); n++)
 					if (snake.getHead().equals(opponent.getBody().get(n)))
@@ -165,7 +171,7 @@ public class Game {
 	}
 	
 	private static void drawSnake(int id) {
-		Snake snake = getSnakes().get(id);
+		Snake snake = Snake.getSnakes().get(id);
 		if (snake.getDeadFrames() <= snake.getBodySize()) {
 			Boolean draw = fpsHandler.ableToDraw() && (!snake.isUnderEffect(Effects.INVISIBLE_TO_MYSELF) ||
 				mySnake != null && snake == mySnake) && snake.getDeadFrames() <= snake.getBodySize();
@@ -232,8 +238,8 @@ public class Game {
 	private static void generateFruitCanvas() {
 //		for (Effects effect : Effects.getListOfAll())
 //			Fruit.addEffectToAllowedEffects(effect);
-		Fruit.addEffectToAllowedEffects(Effects.SWAP_2_OPPONENT_POSITIONS);
-		Fruit.addRandomFruits(0 ,0 ,(Main.getScreenWidth() - 20) / dotSize, (Main.getScreenHeight() - 40) / dotSize, 20, getSnakes())
+		Fruit.addEffectToAllowedEffects(Effects.TRANSFORM_FRUITS_INTO_WALL);
+		Fruit.addRandomFruits(0 ,0 ,(Main.getScreenWidth() - 20) / dotSize, (Main.getScreenHeight() - 40) / dotSize, 20, Snake.getSnakes())
 			.forEach(fruit -> fruitCanvasDrawFruit(fruit));
 	}
 
@@ -273,8 +279,5 @@ public class Game {
 
 	public static List<Position> getWalls()
 		{ return walls; }
-
-	public static List<Snake> getSnakes()
-		{ return snakes; }
 
 }

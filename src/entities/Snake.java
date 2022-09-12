@@ -13,6 +13,8 @@ import javafx.scene.input.KeyCode;
 
 public class Snake extends Position {
 
+	private static List<Snake> snakes = new ArrayList<>();
+
 	private static List<List<KeyCode>> playerKeys = 
 		Arrays.asList(Arrays.asList(KeyCode.LEFT, KeyCode.UP, KeyCode.RIGHT, KeyCode.DOWN),
 		Arrays.asList(KeyCode.A, KeyCode.W, KeyCode.D, KeyCode.S),
@@ -44,7 +46,7 @@ public class Snake extends Position {
 			incBody();
 			getTail().incPositionByDirection(direction.getReverseDirection());
 		}
-		keys = playerKeys.get(Game.getSnakes().size());
+		keys = playerKeys.get(getSnakes().size());
 	}
 	
 	public void swapPositon(Snake anotherSnake) {
@@ -247,5 +249,8 @@ public class Snake extends Position {
 
 	public void clearEffects()
 		{ effects.clear(); }
+	
+	public static List<Snake> getSnakes()
+		{ return snakes; }
 
 }
