@@ -17,8 +17,10 @@ import gameutil.GameTools;
 import gameutil.KeyHandler;
 import gameutil.Position;
 import gui.util.Controller;
+import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.control.Menu;
+import javafx.scene.effect.BoxBlur;
 import javafx.scene.image.Image;
 import javafx.scene.input.KeyCode;
 import javafx.scene.paint.Color;
@@ -53,7 +55,7 @@ public class Game {
 		Snake.getSnakes().add(new Snake(Main.getScreenWidth() / 10 * 5 / dotSize, Main.getScreenHeight() / 3 / dotSize, 3, Direction.DOWN));
 		Snake.getSnakes().add(new Snake(Main.getScreenWidth() / 10 * 2 / dotSize, Main.getScreenHeight() / 3 / dotSize, 3, Direction.DOWN));
 		generateBGCanvas();
-		generateFruitCanvas();
+		setupFruits();
 	}
 	
 	private static List<Direction> dirs = Arrays.asList(Direction.LEFT, Direction.UP, Direction.RIGHT, Direction.DOWN);
@@ -77,14 +79,19 @@ public class Game {
 	private static void onKeyRelease(KeyCode keyCode) {
 		//System.out.println("RELEASED: " + keyCode);
 	}
+	
+	private static void clearCanvas(Canvas canvas) {
+		GraphicsContext gc = canvas.getGraphicsContext2D();
+		gc.setEffect(null);
+		gc.clearRect(0, 0, Main.getScreenWidth(), Main.getScreenHeight());
+		gc.setEffect(new BoxBlur(1, 1, Main.getLiearFiltering()));
+	}
 
 	private static void gameLoop() {
 		int snakeId = 0;
 		KeyHandler.runItOnMainLoopEveryFrame();
-		if (fpsHandler.ableToDraw()) {
-			GraphicsContext gc = Main.getSnakeCanvas().getGraphicsContext2D();
-			gc.clearRect(0, 0, Main.getScreenWidth(), Main.getScreenHeight());
-		}
+		if (fpsHandler.ableToDraw())
+			clearCanvas(Main.getSnakeCanvas());
 		
 		for (Snake snake : Snake.getSnakes()) {
 			checkIfSnakeAteAFruit(snake);
@@ -93,7 +100,8 @@ public class Game {
 			snakeId++;
 		}
 
-		fpsHandler.fpsCounter(e -> KeyHandler.runItOnMainLoopEveryFrame());
+		KeyHandler.runItOnMainLoopEveryFrame();
+		fpsHandler.fpsCounter();
 		Main.getMainStage().setTitle("JavaFX Snake - CPS: " + fpsHandler.getCPS() + " FPS: " + fpsHandler.getFPS());
 		
 		if (Main.windowsIsOpen())
@@ -108,9 +116,8 @@ public class Game {
 			for (Fruit fruit : Fruit.getFruits())
 				if (fruit.getPosition().equals(snake.getHead().getPosition())) {
 					Fruit.getFruits().remove(fruit);
-					Main.getGameFruitCanvas().getGraphicsContext2D().clearRect(fruit.getX() * dotSize, fruit.getY() * dotSize, dotSize, dotSize);
-					Fruit newFruit = Fruit.addRandomFruit(0 ,0 ,(Main.getScreenWidth() - 20) / dotSize, (Main.getScreenHeight() - 40) / dotSize, Snake.getSnakes());
-					fruitCanvasDrawFruit(newFruit);
+					Fruit.addRandomFruit(0 ,0 ,(Main.getScreenWidth() - 20) / dotSize, (Main.getScreenHeight() - 40) / dotSize, Snake.getSnakes());
+					fruitCanvasDrawFruits();
 					if (fruit.getEffect() != null) {
 						if (fruit.getEffect() == Effects.CLEAR_EFFECTS)
 							snake.clearEffects();
@@ -119,7 +126,7 @@ public class Game {
 							for (Fruit del : Fruit.getFruits())
 								Main.getGameFruitCanvas().getGraphicsContext2D().clearRect(del.getX() * dotSize, del.getY() * dotSize, dotSize, dotSize);
 							Fruit.getFruits().clear();
-							generateFruitCanvas();
+							setupFruits();
 						}
 						else if (fruit.getEffect() == Effects.SWAP_2_OPPONENT_POSITIONS) {
 							Snake opponent1 = aliveSnakes() == 2 ? snake : getRandomOpponentSnake(snake);
@@ -148,6 +155,7 @@ public class Game {
 		return randomSnake;
 	}
 
+	@SuppressWarnings("unused")
 	private static Snake getRandomOpponentSnake()
 		{ return getRandomOpponentSnake(null); }
 	
@@ -172,51 +180,43 @@ public class Game {
 	
 	private static void drawSnake(int id) {
 		Snake snake = Snake.getSnakes().get(id);
-		if (snake.getDeadFrames() <= snake.getBodySize()) {
-			Boolean draw = fpsHandler.ableToDraw() && (!snake.isUnderEffect(Effects.INVISIBLE_TO_MYSELF) ||
-				mySnake != null && snake == mySnake) && snake.getDeadFrames() <= snake.getBodySize();
-			GraphicsContext gc = Main.getSnakeCanvas().getGraphicsContext2D();
-			Position position = new Position();
-			Boolean dropBodyAsWall;
-			Boolean convertBodyToWall = false;
-			for (int n = snake.getBody().size() - 1, sprX, sprY; n >= 0; n--) {
-				position.setPosition(snake.getBody().get(n).getPosition());
-				dropBodyAsWall = snake.isUnderEffect(Effects.DROP_BODY_AS_WALL_AFTER_FEW_STEPS) && 
-					fpsHandler.getElapsedFrames() / 6 % 2 == 0 && n > 2;
-				gc = dropBodyAsWall || snake.getDeadFrames() >= n ? Main.getGameBGCanvas().getGraphicsContext2D() : Main.getSnakeCanvas().getGraphicsContext2D();
-				if (snake.getDeadFrames() == snake.getBodySize())
-					convertBodyToWall = true;
-				sprX = dropBodyAsWall ? 30 : n == 0 ? 15 : 0;
-				sprY = dropBodyAsWall ? 0 : snake.getDeadFrames() >= n ? 105 : id * 15;
-				if (draw)
-					gc.drawImage(sprites, sprX, sprY, 15, 15, position.getX() * dotSize, position.getY() * dotSize, dotSize, dotSize);
-			}
-			int sprX = 30 + (snake.getDirection().getValue() == 0 ? 0 : snake.getDirection().getValue() / 2) * 15;
-			int sprY = snake.isUnderEffect(Effects.CAN_EAT_OTHERS) ? (fpsHandler.getElapsedFrames() / 5 % 2 == 0 ? 90 : 105) : 75;
-			if (draw && !snake.isDead())
-				gc.drawImage(sprites, sprX, sprY, 15, 15, snake.getHead().getX() * dotSize, snake.getHead().getY() * dotSize, dotSize, dotSize);
-			if (convertBodyToWall)
-				walls.addAll(snake.getBody());
-			snake.move(-1);
+		Boolean draw = fpsHandler.ableToDraw() && (!snake.isUnderEffect(Effects.INVISIBLE_TO_MYSELF) ||
+			mySnake != null && snake == mySnake);
+		GraphicsContext gc = Main.getSnakeCanvas().getGraphicsContext2D();
+		Position position = new Position();
+		Boolean dropBodyAsWall;
+		for (int n = snake.getBody().size() - 1, sprX, sprY; n >= 0; n--) {
+			position.setPosition(snake.getBody().get(n).getPosition());
+			dropBodyAsWall = snake.isUnderEffect(Effects.DROP_BODY_AS_WALL_AFTER_FEW_STEPS) && 
+				fpsHandler.getElapsedFrames() / 6 % 2 == 0 && n > 2;
+			sprX = dropBodyAsWall ? 30 : n == 0 ? 15 : 0;
+			sprY = dropBodyAsWall ? 0 : snake.getDeadFrames() >= n ? 105 : id * 15;
+			if (draw)
+				gc.drawImage(sprites, sprX, sprY, 15, 15, position.getX() * dotSize, position.getY() * dotSize, dotSize, dotSize);
+		}
+		int sprX = 30 + (snake.getDirection().getValue() == 0 ? 0 : snake.getDirection().getValue() / 2) * 15;
+		int sprY = snake.isUnderEffect(Effects.CAN_EAT_OTHERS) ? (fpsHandler.getElapsedFrames() / 5 % 2 == 0 ? 90 : 105) : 75;
+		if (draw && !snake.isDead())
+			gc.drawImage(sprites, sprX, sprY, 15, 15, snake.getHead().getX() * dotSize, snake.getHead().getY() * dotSize, dotSize, dotSize);
+		snake.move(-1);
+	}
+
+	private static void fruitCanvasDrawFruits() {
+		GraphicsContext gc = Main.getGameFruitCanvas().getGraphicsContext2D();
+		clearCanvas(Main.getGameFruitCanvas());
+		for (Fruit fruit : Fruit.getFruits()) {
+			Boolean isEffect = fruit.getEffect() != null;
+			int sprX = isEffect ? 75 : fruit.getIncSizeBy() < 0 ? 60 : 45;
+			int x = fruit.getX() * dotSize;
+			int y = fruit.getY() * dotSize;
+			gc.drawImage(sprites, sprX, 0, 15, 15, x, y, dotSize, dotSize);
+			gc.setStroke(isEffect ? Color.WHITE : Color.BLACK);
+			gc.setTextAlign(TextAlignment.CENTER);
+			gc.strokeText((isEffect ? "" + fruit.getEffect().getValue() : "" + Math.abs(fruit.getIncSizeBy())), x + dotSize / 2, y + dotSize * 0.75);
 		}
 	}
 
-	private static void fruitCanvasDrawFruit(Fruit fruit) {
-		GraphicsContext gc = Main.getGameFruitCanvas().getGraphicsContext2D();
-		Boolean isEffect = fruit.getEffect() != null;
-		int sprX = isEffect ? 75 : fruit.getIncSizeBy() < 0 ? 60 : 45;
-		int x = fruit.getX() * dotSize;
-		int y = fruit.getY() * dotSize;
-		gc.drawImage(sprites, sprX, 0, 15, 15, x, y, dotSize, dotSize);
-		gc.setStroke(isEffect ? Color.WHITE : Color.BLACK);
-		gc.setTextAlign(TextAlignment.CENTER);
-		gc.strokeText((isEffect ? "" + fruit.getEffect().getValue() : "" + Math.abs(fruit.getIncSizeBy())), x + dotSize / 2, y + dotSize * 0.75);
-	}
-
 	private static void generateBGCanvas() {
-		GraphicsContext gc = Main.getGameBGCanvas().getGraphicsContext2D();
-		gc.clearRect(0, 0, Main.getScreenWidth(), Main.getScreenHeight());
-		gc.drawImage(arena, 0, 0, Main.getScreenWidth() - dotSize, Main.getScreenHeight() - dotSize * 2);
 		for (int y = 0; y < Main.getScreenHeight() / dotSize - 2; y++) {
 			walls.add(new Position(0, y));
 			walls.add(new Position(Main.getScreenWidth() / dotSize - 2, y));
@@ -230,17 +230,19 @@ public class Game {
 	
 	public static void drawWalls(List<Position> wallsToAdd) {
 		GraphicsContext gc = Main.getGameBGCanvas().getGraphicsContext2D();
-		for (Position wall : wallsToAdd)
-			gc.drawImage(sprites, 45, 30, 15, 15, wall.getX() * dotSize, wall.getY() * dotSize, dotSize, dotSize);
+		clearCanvas(Main.getGameBGCanvas());
+		gc.drawImage(arena, 0, 0, Main.getScreenWidth() - dotSize, Main.getScreenHeight() - dotSize * 2);
 		walls.addAll(wallsToAdd);
+		for (Position wall : walls)
+			gc.drawImage(sprites, 45, 30, 15, 15, wall.getX() * dotSize, wall.getY() * dotSize, dotSize, dotSize);
 	}
 
-	private static void generateFruitCanvas() {
-//		for (Effects effect : Effects.getListOfAll())
-//			Fruit.addEffectToAllowedEffects(effect);
+	private static void setupFruits() {
+		for (Effects effect : Effects.getListOfAll())
+			Fruit.addEffectToAllowedEffects(effect);
 		Fruit.addEffectToAllowedEffects(Effects.TRANSFORM_FRUITS_INTO_WALL);
-		Fruit.addRandomFruits(0 ,0 ,(Main.getScreenWidth() - 20) / dotSize, (Main.getScreenHeight() - 40) / dotSize, 20, Snake.getSnakes())
-			.forEach(fruit -> fruitCanvasDrawFruit(fruit));
+		Fruit.addRandomFruits(0 ,0 ,(Main.getScreenWidth() - 20) / dotSize, (Main.getScreenHeight() - 40) / dotSize, 20, Snake.getSnakes());
+		fruitCanvasDrawFruits();
 	}
 
 	public static void init() {
@@ -268,7 +270,8 @@ public class Game {
 				gc.fillRect(x, y, quad, quad);
 			}
 		
-		fpsHandler.fpsCounter(e -> KeyHandler.runItOnMainLoopEveryFrame());
+		KeyHandler.runItOnMainLoopEveryFrame();
+		fpsHandler.fpsCounter();
 
 		if (Main.windowsIsOpen())
 			GameTools.callMethodAgain(e -> gameLoopTest());

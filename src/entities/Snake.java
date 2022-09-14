@@ -235,7 +235,7 @@ public class Snake extends Position {
 	}
 	
 	public void dropBodyAsWall(int pos) {
-		Game.drawWalls(body.subList(pos, body.size()));
+		Game.drawWalls(body.subList(pos + 1, body.size()));
 		cutBodyFrom(pos);
 	}
 

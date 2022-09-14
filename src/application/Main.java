@@ -4,6 +4,7 @@ import game.Game;
 import javafx.application.Application;
 import javafx.scene.Scene;
 import javafx.scene.canvas.Canvas;
+import javafx.scene.effect.BoxBlur;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
@@ -18,7 +19,18 @@ public class Main extends Application {
 	private static Stage mainStage;
 	private static Scene mainScene;
 	private static Boolean windowIsOpen;
+	private static int linearFiltering = 1;
 	
+	public static int getLiearFiltering()
+		{ return linearFiltering; }
+
+	public static void setLiearFiltering(int liearFiltering) {
+		Main.linearFiltering = liearFiltering;
+		gameSnakeCanvas.getGraphicsContext2D().setEffect(new BoxBlur(1, 1, linearFiltering));
+		gameBGCanvas.getGraphicsContext2D().setEffect(new BoxBlur(1, 1, linearFiltering));
+		gameFruitCanvas.getGraphicsContext2D().setEffect(new BoxBlur(1, 1, linearFiltering));		
+	}
+
 	public static Boolean windowsIsOpen()
 		{ return windowIsOpen; }
 	
@@ -59,6 +71,8 @@ public class Main extends Application {
 		gameSnakeCanvas.getGraphicsContext2D().setImageSmoothing(false);
 		gameBGCanvas.getGraphicsContext2D().setImageSmoothing(false);
 		gameFruitCanvas.getGraphicsContext2D().setImageSmoothing(false);
+		setLiearFiltering(linearFiltering);
+
 		StackPane stackPane = new StackPane();
 		stackPane.getChildren().addAll(gameBGCanvas, gameFruitCanvas, gameSnakeCanvas);
 		vBox.getChildren().add(stackPane);
