@@ -1,14 +1,15 @@
 package game;
 
 import java.security.SecureRandom;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
 import application.Main;
 import entities.Fruit;
+import entities.Hole;
 import entities.Snake;
+import entities.Wall;
 import enums.Direction;
 import enums.Effects;
 import enums.GameMode;
@@ -31,7 +32,6 @@ public class Game {
 	private static Image sprites = Controller.removeBgColor(new Image("/sprites/sprites.png"), Color.valueOf("#326496"), 0);
 	private static Image arena = new Image("/sprites/arenas/01.png");
 	private static int dotSize = 20;
-	private static List<Position> walls = new ArrayList<>();
 	private static Menu mainMenu;
 	private static FPSHandler fpsHandler = new FPSHandler(60, 2);
 	private static GameMode gameMode = GameMode.LOCAL_MULTIPLAYER;
@@ -56,6 +56,7 @@ public class Game {
 		Snake.getSnakes().add(new Snake(Main.getScreenWidth() / 10 * 2 / dotSize, Main.getScreenHeight() / 3 / dotSize, 3, Direction.DOWN));
 		generateBGCanvas();
 		setupFruits();
+		generateHoles();
 	}
 	
 	private static List<Direction> dirs = Arrays.asList(Direction.LEFT, Direction.UP, Direction.RIGHT, Direction.DOWN);
@@ -94,6 +95,7 @@ public class Game {
 			clearCanvas(Main.getSnakeCanvas());
 		
 		for (Snake snake : Snake.getSnakes()) {
+			checkIfSnakeEnteredInAHole(snake);
 			checkIfSnakeAteAFruit(snake);
 			checkIfSnakeColidedWithOtherSnake(snake);
 			drawSnake(snakeId);
@@ -111,6 +113,13 @@ public class Game {
 	private static int aliveSnakes()
 		{ return (int)Snake.getSnakes().stream().filter(s -> !s.isDead()).count(); }
 
+	private static void checkIfSnakeEnteredInAHole(Snake snake) {
+		Hole hole = Hole.getHoleAt(snake.getHead());
+		Hole hole2 = hole == null ? null : hole.getConnectedHole();
+		if (hole != null && !snake.getHeadlessBody().contains(hole2.getPosition()))
+			snake.teleportHeadTo(hole2.getPosition());
+	}
+	
 	private static void checkIfSnakeAteAFruit(Snake snake) {
 		if (Fruit.getFruitsPositions().contains(snake.getHead().getPosition()))
 			for (Fruit fruit : Fruit.getFruits())
@@ -122,7 +131,7 @@ public class Game {
 						if (fruit.getEffect() == Effects.CLEAR_EFFECTS)
 							snake.clearEffects();
 						else if (fruit.getEffect() == Effects.TRANSFORM_FRUITS_INTO_WALL) {
-							drawWalls(Fruit.getFruitsPositions());
+							drawBG(Fruit.getFruitsPositions());
 							for (Fruit del : Fruit.getFruits())
 								Main.getGameFruitCanvas().getGraphicsContext2D().clearRect(del.getX() * dotSize, del.getY() * dotSize, dotSize, dotSize);
 							Fruit.getFruits().clear();
@@ -160,7 +169,7 @@ public class Game {
 		{ return getRandomOpponentSnake(null); }
 	
 	private static void checkIfSnakeColidedWithOtherSnake(Snake snake) {
-		if (getWalls().contains(snake.getHead()) ||
+		if (Wall.getWalls().contains(snake.getHead()) ||
 				(!snake.isUnderEffect(Effects.CAN_EAT_OTHERS) &&
 				(snake.getHeadlessBody().contains(snake.getHead()) ||
 				!Snake.getSnakes().stream()
@@ -218,25 +227,36 @@ public class Game {
 
 	private static void generateBGCanvas() {
 		for (int y = 0; y < Main.getScreenHeight() / dotSize - 2; y++) {
-			walls.add(new Position(0, y));
-			walls.add(new Position(Main.getScreenWidth() / dotSize - 2, y));
+			Wall.addWall(new Position(0, y));
+			Wall.addWall(new Position(Main.getScreenWidth() / dotSize - 2, y));
 		}
 		for (int x = 0; x < Main.getScreenWidth() / dotSize - 1; x++) {
-			walls.add(new Position(x, 0));
-			walls.add(new Position(x, Main.getScreenHeight() / dotSize - 3));
+			Wall.addWall(new Position(x, 0));
+			Wall.addWall(new Position(x, Main.getScreenHeight() / dotSize - 3));
 		}
-		drawWalls(walls);
+		drawBG(Wall.getWalls());
 	}
 	
-	public static void drawWalls(List<Position> wallsToAdd) {
+	private static void generateHoles() {
+		while (Hole.getHoles().size() < 10) {
+			Hole.addHole(generateNewFreePosition(2, 2, Main.getScreenWidth() / dotSize - 5, Main.getScreenWidth() / dotSize - 16, 1));
+			if (Hole.getHoles().size() % 2 == 0)
+				Hole.connectLastAddedHoles();
+		}
+		drawBG(Wall.getWalls());
+	}
+	
+	public static void drawBG(List<Position> wallsToAdd) {
 		GraphicsContext gc = Main.getGameBGCanvas().getGraphicsContext2D();
 		clearCanvas(Main.getGameBGCanvas());
 		gc.drawImage(arena, 0, 0, Main.getScreenWidth() - dotSize, Main.getScreenHeight() - dotSize * 2);
-		walls.addAll(wallsToAdd);
-		for (Position wall : walls)
+		Wall.addAll(wallsToAdd);
+		for (Position wall : Wall.getWalls())
 			gc.drawImage(sprites, 45, 30, 15, 15, wall.getX() * dotSize, wall.getY() * dotSize, dotSize, dotSize);
+		for (Position holes : Hole.getHoles())
+			gc.drawImage(sprites, 60, 30, 20, 20, holes.getX() * dotSize - dotSize * 0.4, holes.getY() * dotSize - dotSize * 0.4, dotSize * 1.8, dotSize * 1.8);
 	}
-
+	
 	private static void setupFruits() {
 		for (Effects effect : Effects.getListOfAll())
 			Fruit.addEffectToAllowedEffects(effect);
@@ -280,7 +300,31 @@ public class Game {
 	public static Menu getMenu()
 		{ return mainMenu;	}
 
-	public static List<Position> getWalls()
-		{ return walls; }
+	public static Position generateNewFreePosition(int startX, int startY, int width, int height, int range) {
+		Position position = new Position(0, 0);
+		Boolean ok = false;
+		while (!ok) {
+			ok = true;
+			position.setX(new SecureRandom().nextInt(width) + startX);
+			position.setY(new SecureRandom().nextInt(height) + startY);
+			for (int y = -range; y <= range; y++)
+				for (int x = -range; x <= range; x++)
+					if (!positionIsFree(position.getX() + x, position.getY() + y))
+						ok = false;
+		}
+		return position;
+	}
 
+	public static Position generateNewFreePosition(int startX, int startY, int width, int height)
+		{ return generateNewFreePosition(startX, startY, width, height, 0); }
+	
+	public static Boolean positionIsFree(Position position) {
+		return !Fruit.getFruitsPositions().contains(position) && !Wall.getWalls().contains(position) &&
+				Hole.getHoles().stream().filter(hole -> hole.getPosition().equals(position)).collect(Collectors.toList()).isEmpty() &&
+				Snake.getSnakes().stream().filter(snake -> snake.getBody().contains(position)).collect(Collectors.toList()).isEmpty();
+	}
+
+	public static Boolean positionIsFree(int x, int y)
+		{ return positionIsFree(new Position(x, y)); }
+	
 }

@@ -42,18 +42,8 @@ public class Fruit extends Position {
 	public static List<Fruit> addRandomFruits(int startAreaX, int startAreaY, int width, int height, int totalFruits, List<Snake> snakes) {
 		List<Fruit> addedFruitsPosition = new ArrayList<>();
 		while (totalFruits-- > 0) {
-			int x = 0;
-			int y = 0;
-			Position pos = new Position(0, 0);
-			while (true) {
-				x = new SecureRandom().nextInt(width) + startAreaX;
-				y = new SecureRandom().nextInt(height) + startAreaY;
-				pos.setPosition(x, y);
-				if (!Fruit.getFruitsPositions().contains(pos) && !Game.getWalls().contains(pos) &&
-						snakes.stream().filter(snake -> snake.getBody().contains(pos)).collect(Collectors.toList()).isEmpty())
-							break;
-			}
-			Fruit fruit = new Fruit(x, y);
+			Position pos = Game.generateNewFreePosition(startAreaX, startAreaY, width, height);
+			Fruit fruit = new Fruit(pos.getX(), pos.getY());
 			if (!allowedEffects.isEmpty() && new SecureRandom().nextInt(100) + 1 <= effectFruitProc)
 				fruit.setEffect(allowedEffects.get(new SecureRandom().nextInt(allowedEffects.size())));
 			else

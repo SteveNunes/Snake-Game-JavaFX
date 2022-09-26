@@ -235,7 +235,7 @@ public class Snake extends Position {
 	}
 	
 	public void dropBodyAsWall(int pos) {
-		Game.drawWalls(body.subList(pos + 1, body.size()));
+		Game.drawBG(body.subList(pos + 1, body.size()));
 		cutBodyFrom(pos);
 	}
 
@@ -252,5 +252,11 @@ public class Snake extends Position {
 	
 	public static List<Snake> getSnakes()
 		{ return snakes; }
+
+	public void teleportHeadTo(Position position) {
+		for (int n = body.size() - 1; n > 0; n--)
+			body.get(n).setPosition(body.get(n - 1));
+		getHead().setPosition(position);
+	}
 
 }
