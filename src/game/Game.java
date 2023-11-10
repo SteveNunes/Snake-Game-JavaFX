@@ -3,7 +3,7 @@ package game;
 import java.security.SecureRandom;
 import java.util.Arrays;
 import java.util.List;
-import java.util.stream.Collectors;
+import java.util.Random;
 
 import application.Main;
 import entities.Fruit;
@@ -14,10 +14,8 @@ import enums.Direction;
 import enums.Effects;
 import enums.GameMode;
 import gameutil.FPSHandler;
-import gameutil.GameTools;
 import gameutil.KeyHandler;
-import gameutil.Position;
-import gui.util.Controller;
+import gui.util.ImageUtils;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.control.Menu;
@@ -25,18 +23,27 @@ import javafx.scene.effect.BoxBlur;
 import javafx.scene.image.Image;
 import javafx.scene.input.KeyCode;
 import javafx.scene.paint.Color;
+import javafx.scene.text.Font;
 import javafx.scene.text.TextAlignment;
+import objmoveutils.Position;
+import util.Misc;
 
 public class Game {
 	
-	private static Image sprites = Controller.removeBgColor(new Image("/sprites/sprites.png"), Color.valueOf("#326496"), 0);
-	private static Image arena = new Image("/sprites/arenas/01.png");
-	private static int dotSize = 20;
+	public static Random random = new Random(new SecureRandom().nextInt(Integer.MAX_VALUE));
+	private static Image sprites = ImageUtils.removeBgColor(new Image("file:Sprites\\sprites.png"), Color.valueOf("#326496"), 0);
+	private static Image arena = new Image("file:Sprites\\arenas\\01.png");
 	private static Menu mainMenu;
-	private static FPSHandler fpsHandler = new FPSHandler(60, 2);
+	private static FPSHandler fpsHandler = new FPSHandler(60);
 	private static GameMode gameMode = GameMode.LOCAL_MULTIPLAYER;
 	private static Snake mySnake = null;
-	private static int framesPerStep = 30;
+	private static int framesPerStep = 5; //30
+	private static int minSnaekSize = 6;
+	private static Font fruitFont = new Font("Arial", 15);
+	private static int dotSize = 20;
+	
+	public static int getDotSize()
+		{ return dotSize; }
 	
 	public static int defaultFramesPerStep()
 		{ return framesPerStep; }
@@ -44,24 +51,18 @@ public class Game {
 	public static GameMode getGameMode()
 		{ return gameMode; }
 	
-	public static int getDotSize()
-		{ return dotSize; }
-	
-	public static void setDotSize(int size)
-		{ dotSize = size; }
-	
 	private static void setupGame() {
-		Snake.getSnakes().add(mySnake = new Snake(Main.getScreenWidth() / 10 * 8 / dotSize, Main.getScreenHeight() / 3 / dotSize, 3, Direction.DOWN));
-		Snake.getSnakes().add(new Snake(Main.getScreenWidth() / 10 * 5 / dotSize, Main.getScreenHeight() / 3 / dotSize, 3, Direction.DOWN));
-		Snake.getSnakes().add(new Snake(Main.getScreenWidth() / 10 * 2 / dotSize, Main.getScreenHeight() / 3 / dotSize, 3, Direction.DOWN));
+		Snake.getSnakes().add(mySnake = new Snake(Main.getDotSize() * 12, 300, minSnakeSize(), Direction.DOWN));
+		Snake.getSnakes().add(new Snake(Main.getDotSize() * 24, 300, minSnakeSize(), Direction.DOWN));
+		Snake.getSnakes().add(new Snake(Main.getDotSize() * 36, 300, minSnakeSize(), Direction.DOWN));
 		generateBGCanvas();
-		setupFruits();
+		generateFruits();
 		generateHoles();
 	}
 	
 	private static List<Direction> dirs = Arrays.asList(Direction.LEFT, Direction.UP, Direction.RIGHT, Direction.DOWN);
 
-	private static void onKeyPress(KeyCode keyCode, Boolean isRepeated) {
+	private static void onKeyPress(KeyCode keyCode) {
 		//System.out.println("PRESSED: " + keyCode);
 		if (keyCode == KeyCode.NUMPAD1)
 			Main.getGameBGCanvas().setVisible(!Main.getGameBGCanvas().isVisible());
@@ -77,6 +78,10 @@ public class Game {
 				}
 	}
 
+	private static void onKeyHold(KeyCode keyCode) {
+		//System.out.println("HOLD: " + keyCode);
+	}
+
 	private static void onKeyRelease(KeyCode keyCode) {
 		//System.out.println("RELEASED: " + keyCode);
 	}
@@ -90,7 +95,7 @@ public class Game {
 
 	private static void gameLoop() {
 		int snakeId = 0;
-		KeyHandler.runItOnMainLoopEveryFrame();
+		KeyHandler.holdKeyPoll();
 		if (fpsHandler.ableToDraw())
 			clearCanvas(Main.getSnakeCanvas());
 		
@@ -102,12 +107,11 @@ public class Game {
 			snakeId++;
 		}
 
-		KeyHandler.runItOnMainLoopEveryFrame();
 		fpsHandler.fpsCounter();
 		Main.getMainStage().setTitle("JavaFX Snake - CPS: " + fpsHandler.getCPS() + " FPS: " + fpsHandler.getFPS());
 		
 		if (Main.windowsIsOpen())
-			GameTools.callMethodAgain(e -> gameLoop());
+			Misc.runLater(() -> gameLoop());
 	}
 	
 	private static int aliveSnakes()
@@ -125,7 +129,7 @@ public class Game {
 			for (Fruit fruit : Fruit.getFruits())
 				if (fruit.getPosition().equals(snake.getHead().getPosition())) {
 					Fruit.getFruits().remove(fruit);
-					Fruit.addRandomFruit(0 ,0 ,(Main.getScreenWidth() - 20) / dotSize, (Main.getScreenHeight() - 40) / dotSize, Snake.getSnakes());
+					Fruit.addRandomFruits(1 ,1 ,Main.getMaxWidth() / Main.getDotSize() - 1, Main.getMaxHeight() / Main.getDotSize() - 1, 1, Snake.getSnakes());
 					fruitCanvasDrawFruits();
 					if (fruit.getEffect() != null) {
 						if (fruit.getEffect() == Effects.CLEAR_EFFECTS)
@@ -133,9 +137,9 @@ public class Game {
 						else if (fruit.getEffect() == Effects.TRANSFORM_FRUITS_INTO_WALL) {
 							drawBG(Fruit.getFruitsPositions());
 							for (Fruit del : Fruit.getFruits())
-								Main.getGameFruitCanvas().getGraphicsContext2D().clearRect(del.getX() * dotSize, del.getY() * dotSize, dotSize, dotSize);
+								Main.getGameFruitCanvas().getGraphicsContext2D().clearRect(del.getX(), del.getY(), Main.getDotSize(), Main.getDotSize());
 							Fruit.getFruits().clear();
-							setupFruits();
+							generateFruits();
 						}
 						else if (fruit.getEffect() == Effects.SWAP_2_OPPONENT_POSITIONS) {
 							Snake opponent1 = aliveSnakes() == 2 ? snake : getRandomOpponentSnake(snake);
@@ -158,9 +162,9 @@ public class Game {
 	}
 	
 	private static Snake getRandomOpponentSnake(Snake snake) {
-		Snake randomSnake = Snake.getSnakes().get(new SecureRandom().nextInt(Snake.getSnakes().size()));
+		Snake randomSnake = Snake.getSnakes().get(random.nextInt(Snake.getSnakes().size()));
 		while (snake != null && randomSnake == snake)
-			randomSnake = Snake.getSnakes().get(new SecureRandom().nextInt(Snake.getSnakes().size()));
+			randomSnake = Snake.getSnakes().get(random.nextInt(Snake.getSnakes().size()));
 		return randomSnake;
 	}
 
@@ -171,12 +175,14 @@ public class Game {
 	private static void checkIfSnakeColidedWithOtherSnake(Snake snake) {
 		if (Wall.getWalls().contains(snake.getHead()) ||
 				(!snake.isUnderEffect(Effects.CAN_EAT_OTHERS) &&
-				(snake.getHeadlessBody().contains(snake.getHead()) ||
-				!Snake.getSnakes().stream()
-				.filter(s -> s != snake && s.getBody().contains(snake.getHead()))
-				.collect(Collectors.toList()).isEmpty()))) {
-					snake.setDead(true);
-					snake.clearEffects();
+				(snake.anotherSnakeColidedWithMe(snake) ||
+				Snake.getSnakes().stream()
+					.filter(s -> s != snake && s.anotherSnakeColidedWithMe(snake)).count() != 0))) {
+						snake.setDead(true);
+						snake.clearEffects();
+						if (Snake.getSnakes().stream().filter(s -> !s.isDead()).count() <= 1) {
+							// Se restou 1 ou nenhuma cobra viva
+						}
 		}
 		if (snake.isUnderEffect(Effects.CAN_EAT_OTHERS))
 			for (Snake opponent : Snake.getSnakes()) {
@@ -197,18 +203,21 @@ public class Game {
 		for (int n = snake.getBody().size() - 1, sprX, sprY; n >= 0; n--) {
 			position.setPosition(snake.getBody().get(n).getPosition());
 			dropBodyAsWall = snake.isUnderEffect(Effects.DROP_BODY_AS_WALL_AFTER_FEW_STEPS) && 
-				fpsHandler.getElapsedFrames() / 6 % 2 == 0 && n > 2;
+				fpsHandler.getElapsedFrames() / 6 % 2 == 0 && n > minSnakeSize();
 			sprX = dropBodyAsWall ? 30 : n == 0 ? 15 : 0;
 			sprY = dropBodyAsWall ? 0 : snake.getDeadFrames() >= n ? 105 : id * 15;
 			if (draw)
-				gc.drawImage(sprites, sprX, sprY, 15, 15, position.getX() * dotSize, position.getY() * dotSize, dotSize, dotSize);
+				gc.drawImage(sprites, sprX, sprY, 15, 15, position.getX(), position.getY(), Main.getDotSize(), Main.getDotSize());
 		}
 		int sprX = 30 + (snake.getDirection().getValue() == 0 ? 0 : snake.getDirection().getValue() / 2) * 15;
 		int sprY = snake.isUnderEffect(Effects.CAN_EAT_OTHERS) ? (fpsHandler.getElapsedFrames() / 5 % 2 == 0 ? 90 : 105) : 75;
 		if (draw && !snake.isDead())
-			gc.drawImage(sprites, sprX, sprY, 15, 15, snake.getHead().getX() * dotSize, snake.getHead().getY() * dotSize, dotSize, dotSize);
+			gc.drawImage(sprites, sprX, sprY, 15, 15, snake.getHead().getX(), snake.getHead().getY(), Main.getDotSize(), Main.getDotSize());
 		snake.move(-1);
 	}
+
+	public static int minSnakeSize()
+		{ return minSnaekSize; }
 
 	private static void fruitCanvasDrawFruits() {
 		GraphicsContext gc = Main.getGameFruitCanvas().getGraphicsContext2D();
@@ -216,30 +225,31 @@ public class Game {
 		for (Fruit fruit : Fruit.getFruits()) {
 			Boolean isEffect = fruit.getEffect() != null;
 			int sprX = isEffect ? 75 : fruit.getIncSizeBy() < 0 ? 60 : 45;
-			int x = fruit.getX() * dotSize;
-			int y = fruit.getY() * dotSize;
-			gc.drawImage(sprites, sprX, 0, 15, 15, x, y, dotSize, dotSize);
+			double x = fruit.getX();
+			double y = fruit.getY();
+			gc.drawImage(sprites, sprX, 0, 15, 15, x + Main.getDotSize() * 0.10, y + Main.getDotSize() * 0.10, Main.getDotSize() * 0.8, Main.getDotSize() * 0.8);
 			gc.setStroke(isEffect ? Color.WHITE : Color.BLACK);
 			gc.setTextAlign(TextAlignment.CENTER);
-			gc.strokeText((isEffect ? "" + fruit.getEffect().getValue() : "" + Math.abs(fruit.getIncSizeBy())), x + dotSize / 2, y + dotSize * 0.75);
+			gc.setFont(fruitFont );
+			gc.strokeText((isEffect ? "" + fruit.getEffect().getValue() : "" + Math.abs(fruit.getIncSizeBy())), x + Main.getDotSize() / 2, y + Main.getDotSize() * 0.67);
 		}
 	}
 
 	private static void generateBGCanvas() {
-		for (int y = 0; y < Main.getScreenHeight() / dotSize - 2; y++) {
+		for (int y = 0; y <= Main.getMaxHeight(); y += Main.getDotSize()) {
 			Wall.addWall(new Position(0, y));
-			Wall.addWall(new Position(Main.getScreenWidth() / dotSize - 2, y));
+			Wall.addWall(new Position(Main.getMaxWidth(), y));
 		}
-		for (int x = 0; x < Main.getScreenWidth() / dotSize - 1; x++) {
+		for (int x = 0; x <= Main.getMaxWidth(); x += Main.getDotSize()) {
 			Wall.addWall(new Position(x, 0));
-			Wall.addWall(new Position(x, Main.getScreenHeight() / dotSize - 3));
+			Wall.addWall(new Position(x, Main.getMaxHeight()));
 		}
 		drawBG(Wall.getWalls());
 	}
 	
 	private static void generateHoles() {
 		while (Hole.getHoles().size() < 10) {
-			Hole.addHole(generateNewFreePosition(2, 2, Main.getScreenWidth() / dotSize - 5, Main.getScreenWidth() / dotSize - 16, 1));
+			Hole.addHole(generateNewFreePosition(2, 2, Main.getMaxWidth() / Main.getDotSize() - 3, Main.getMaxHeight() / Main.getDotSize() - 3, 1));
 			if (Hole.getHoles().size() % 2 == 0)
 				Hole.connectLastAddedHoles();
 		}
@@ -249,52 +259,29 @@ public class Game {
 	public static void drawBG(List<Position> wallsToAdd) {
 		GraphicsContext gc = Main.getGameBGCanvas().getGraphicsContext2D();
 		clearCanvas(Main.getGameBGCanvas());
-		gc.drawImage(arena, 0, 0, Main.getScreenWidth() - dotSize, Main.getScreenHeight() - dotSize * 2);
+		gc.drawImage(arena, 0, 0, Main.getScreenWidth(), Main.getScreenHeight());
 		Wall.addAll(wallsToAdd);
 		for (Position wall : Wall.getWalls())
-			gc.drawImage(sprites, 45, 30, 15, 15, wall.getX() * dotSize, wall.getY() * dotSize, dotSize, dotSize);
+			gc.drawImage(sprites, 45, 30, 15, 15, wall.getX(), wall.getY(), Main.getDotSize(), Main.getDotSize());
 		for (Position holes : Hole.getHoles())
-			gc.drawImage(sprites, 60, 30, 20, 20, holes.getX() * dotSize - dotSize * 0.4, holes.getY() * dotSize - dotSize * 0.4, dotSize * 1.8, dotSize * 1.8);
+			gc.drawImage(sprites, 120, 0, 20, 20, holes.getX() - Main.getDotSize() * 0.4, holes.getY() - Main.getDotSize() * 0.4, Main.getDotSize() * 1.8, Main.getDotSize() * 1.8);
 	}
 	
-	private static void setupFruits() {
+	private static void generateFruits() {
 		for (Effects effect : Effects.getListOfAll())
 			Fruit.addEffectToAllowedEffects(effect);
 		Fruit.addEffectToAllowedEffects(Effects.TRANSFORM_FRUITS_INTO_WALL);
-		Fruit.addRandomFruits(0 ,0 ,(Main.getScreenWidth() - 20) / dotSize, (Main.getScreenHeight() - 40) / dotSize, 20, Snake.getSnakes());
+		Fruit.addRandomFruits(1 ,1 ,Main.getMaxWidth() / Main.getDotSize() - 1, Main.getMaxHeight() / Main.getDotSize() - 1, 20, Snake.getSnakes());
 		fruitCanvasDrawFruits();
 	}
 
 	public static void init() {
 		mainMenu = new Menu("Game");
-		Main.getMainScene().setOnKeyPressed(e -> KeyHandler.keyPressedEventHandler(e, k -> onKeyPress(k, false), k -> onKeyPress(k, true)));
-		Main.getMainScene().setOnKeyReleased(e -> KeyHandler.keyReleasedEventHandler(e, k -> onKeyRelease(k)));
+		KeyHandler.setOnKeyPressEvent(Main.getMainScene(), k -> onKeyPress(k));
+		KeyHandler.setOnKeyHoldEvent(k -> onKeyHold(k));
+		KeyHandler.setOnKeyReleaseEvent(Main.getMainScene(), k -> onKeyRelease(k));
 		setupGame();
 		gameLoop();
-	}
-
-	@SuppressWarnings("unused")
-	private static void gameLoopTest() {
-		GraphicsContext gc = Main.getSnakeCanvas().getGraphicsContext2D();
-		gc.clearRect(0, 0, Main.getScreenWidth(), Main.getScreenHeight());
-	
-		int quad = 20;
-		for (int y = 0; y + quad * 2 < Main.getScreenHeight(); y += quad)
-			for (int x = 0; x + quad < Main.getScreenWidth(); x += quad) {
-				int r = new SecureRandom().nextInt(255);
-				int g = new SecureRandom().nextInt(255);
-				int b = new SecureRandom().nextInt(255);
-				String colorStr = "#" + String.format("%02X", r & 0xFF) + String.format("%02X", g & 0xFF) + String.format("%02X", b & 0xFF);
-				Color color = Color.valueOf(colorStr);
-				gc.setFill(color);
-				gc.fillRect(x, y, quad, quad);
-			}
-		
-		KeyHandler.runItOnMainLoopEveryFrame();
-		fpsHandler.fpsCounter();
-
-		if (Main.windowsIsOpen())
-			GameTools.callMethodAgain(e -> gameLoopTest());
 	}
 
 	public static Menu getMenu()
@@ -305,11 +292,11 @@ public class Game {
 		Boolean ok = false;
 		while (!ok) {
 			ok = true;
-			position.setX(new SecureRandom().nextInt(width) + startX);
-			position.setY(new SecureRandom().nextInt(height) + startY);
+			position.setX((random.nextInt(width) + startX) * Main.getDotSize());
+			position.setY((random.nextInt(height) + startY) * Main.getDotSize());
 			for (int y = -range; y <= range; y++)
 				for (int x = -range; x <= range; x++)
-					if (!positionIsFree(position.getX() + x, position.getY() + y))
+					if (!positionIsFree(position.getX() + x * Main.getDotSize(), position.getY() + y * Main.getDotSize()))
 						ok = false;
 		}
 		return position;
@@ -320,11 +307,33 @@ public class Game {
 	
 	public static Boolean positionIsFree(Position position) {
 		return !Fruit.getFruitsPositions().contains(position) && !Wall.getWalls().contains(position) &&
-				Hole.getHoles().stream().filter(hole -> hole.getPosition().equals(position)).collect(Collectors.toList()).isEmpty() &&
-				Snake.getSnakes().stream().filter(snake -> snake.getBody().contains(position)).collect(Collectors.toList()).isEmpty();
+				Hole.getHoles().stream().filter(hole -> hole.getPosition().equals(position)).count() == 0 &&
+				Snake.getSnakes().stream().filter(snake -> snake.somethingColidedWithMe(position)).count() == 0;
 	}
 
-	public static Boolean positionIsFree(int x, int y)
+	public static Boolean positionIsFree(double x, double y)
 		{ return positionIsFree(new Position(x, y)); }
+	
+	public static Boolean positionColidedWithAnotherPosition(Position position1, Position position2, int centerX, int centerY) {
+		int x = (int)(position1.getX() + centerX);
+		int y = (int)(position1.getY() + centerY);
+		if (x >= position2.getX() && x <= position2.getX() + Game.getDotSize() &&
+				y > position2.getY() && y < position2.getY() + Game.getDotSize())
+					return true;
+		return false;
+	}
+	
+	public static Boolean positionColidedWithAnotherPosition(Position position1, Position position2)
+		{ return positionColidedWithAnotherPosition(position1, position2, getDotSize() / 2, getDotSize() / 2); }
+	
+	public static Boolean positionColidedWithAnotherPosition(Position position, List<Position> positions, int centerX, int centerY) {
+		for (Position position2 : positions)
+			if (positionColidedWithAnotherPosition(position, position2, centerX, centerY))
+				return true;
+		return false;
+	}
+
+	public static Boolean positionColidedWithAnotherPosition(Position position, List<Position> positions)
+		{ return positionColidedWithAnotherPosition(position, positions, getDotSize() / 2, getDotSize() / 2); }
 	
 }

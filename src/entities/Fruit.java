@@ -3,11 +3,12 @@ package entities;
 import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 import java.util.stream.Collectors;
 
 import enums.Effects;
 import game.Game;
-import gameutil.Position;
+import objmoveutils.Position;
 
 public class Fruit extends Position {
 
@@ -20,7 +21,7 @@ public class Fruit extends Position {
 	private int incSizeBy;
 	private Effects effect;
 	
-	public Fruit(int x, int y) {
+	public Fruit(double x, double y) {
 		super(x, y);
 		incSizeBy = 0;
 		effect = null;
@@ -44,10 +45,10 @@ public class Fruit extends Position {
 		while (totalFruits-- > 0) {
 			Position pos = Game.generateNewFreePosition(startAreaX, startAreaY, width, height);
 			Fruit fruit = new Fruit(pos.getX(), pos.getY());
-			if (!allowedEffects.isEmpty() && new SecureRandom().nextInt(100) + 1 <= effectFruitProc)
-				fruit.setEffect(allowedEffects.get(new SecureRandom().nextInt(allowedEffects.size())));
+			if (!allowedEffects.isEmpty() && Game.random.nextInt(100) + 1 <= effectFruitProc)
+				fruit.setEffect(allowedEffects.get(Game.random.nextInt(allowedEffects.size())));
 			else
-				fruit.setIncSizeBy((new SecureRandom().nextInt(9) + 1) * (new SecureRandom().nextInt(100) + 1 <= incSizeFruitProc ? 1 : -1));
+				fruit.setIncSizeBy((Game.random.nextInt(9) + 1) * (Game.random.nextInt(100) + 1 <= incSizeFruitProc ? 1 : -1));
 			addFruit(fruit);
 			addedFruitsPosition.add(fruit);
 		}

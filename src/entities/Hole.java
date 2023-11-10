@@ -3,8 +3,7 @@ package entities;
 import java.util.ArrayList;
 import java.util.List;
 
-import application.Main;
-import gameutil.Position;
+import objmoveutils.Position;
 
 public class Hole extends Position {
 	
@@ -12,7 +11,7 @@ public class Hole extends Position {
 
 	private Hole hole;
 	
-	public Hole(int x, int y) {
+	public Hole(double x, double y) {
 		setPosition(x, y);
 		hole = null;
 	}

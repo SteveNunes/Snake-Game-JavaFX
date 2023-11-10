@@ -3,7 +3,7 @@ package entities;
 import java.util.ArrayList;
 import java.util.List;
 
-import gameutil.Position;
+import objmoveutils.Position;
 
 public class Wall extends Position {
 	

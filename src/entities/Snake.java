@@ -1,15 +1,15 @@
 package entities;
 
-import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import application.Main;
 import enums.Direction;
 import enums.Effects;
 import game.Game;
-import gameutil.Position;
 import javafx.scene.input.KeyCode;
+import objmoveutils.Position;
 
 public class Snake extends Position {
 
@@ -92,6 +92,34 @@ public class Snake extends Position {
 	public Direction getDirection()
 		{ return direction; }
 	
+	public Boolean headColidedWith(Position position) {
+		int x = (int)getHead().getX() + Game.getDotSize() / 2;
+		int y = (int)getHead().getY() + Game.getDotSize() / 2;
+		return x >= position.getX() && x <= position.getX() + Game.getDotSize() &&
+				y >= position.getY() && y <= position.getY() + Game.getDotSize();
+	}
+	
+	public Boolean headColidedWith(List<Position> positions) {
+		for (Position position : positions)
+			if (headColidedWith(position))
+				return true;
+		return false;
+	}
+	
+	public Boolean somethingColidedWithMe(Position something) {
+		Position p = new Position(Game.getDotSize(), Game.getDotSize());
+		if (direction != null)
+			p.incPositionByDirection(direction, Game.getDotSize() * 0.45);
+		return Game.positionColidedWithAnotherPosition(something, body);
+	}
+
+	public Boolean anotherSnakeColidedWithMe(Snake snake) {
+		Position p = new Position(Game.getDotSize(), Game.getDotSize());
+		if (direction != null)
+			p.incPositionByDirection(snake.getDirection(), Game.getDotSize() * 0.45);
+		return Game.positionColidedWithAnotherPosition(snake.getHead(), snake == this ? headlessBody : body);
+	}
+
 	private Boolean isUnderAnEffectThatNotAllowToAccelerate() {
 		for (Effect effect : effects)
 			if (effect.getEffect().notAbleToAcelerateByHoldingKey())
@@ -111,13 +139,16 @@ public class Snake extends Position {
 	
 	public void setDirection(Direction direction) {
 		direction = directionThroughEffect(direction);
-		if (!isDead() && (direction != this.direction || !isUnderAnEffectThatNotAllowToAccelerate())) {
-			this.direction = direction;
-			if (!isUnderAnEffectThatNotAllowToAccelerate())
-				speedVal = framesPerStep;
+		if (!isDead() && (direction != this.direction || !isUnderAnEffectThatNotAllowToAccelerate()) &&
+				direction != this.direction.getReverseDirection()) {
+				while (!isCentered())
+					move(-1);
+				this.direction = direction;
+				if (!isUnderAnEffectThatNotAllowToAccelerate())
+					speedVal = framesPerStep;
 		}
 	}
-	
+
 	public boolean canTurnToDirection(Direction direction) {
 		direction = directionThroughEffect(direction);
 		Position pos = new Position(getHead());
@@ -195,7 +226,7 @@ public class Snake extends Position {
 	}
 
 	private void updateHeadlessBody()
-		{ headlessBody = new ArrayList<>(body.subList(1, body.size())); }
+		{ headlessBody = new ArrayList<>(body.subList(2, body.size())); }
 	
 	public void removeTailDot(int quantityToRemove) {
 		body = body.subList(0, body.size() - quantityToRemove);
@@ -208,7 +239,11 @@ public class Snake extends Position {
 		 * keyPressedType == 0 - Chamado por pressão única de tecla
 		 * keyPressedType == 1 - Chamado por pressão pressionada de tecla
 		 */
-		if (removeBody > 0 && --removeBody >= 0 && body.size() > 3)
+//		if (!pressedDirections.isEmpty() && isCentered()) {
+//			setDirection2(pressedDirections.get(0));
+//			pressedDirections.remove(0);
+//		}
+		if (removeBody > 0 && --removeBody >= 0 && body.size() > Game.minSnakeSize())
 			removeTailDot(1);
 		if (isDead() && deadFrames <= getBodySize())
 			deadFrames++;
@@ -218,11 +253,11 @@ public class Snake extends Position {
 								speedVal = 0;
 								for (int n = getBodySize() - 1; n > 0; n--)
 									body.get(n).setPosition(body.get(n - 1).getPosition());
-								getHead().incPositionByDirection(direction);
+								getHead().incPositionByDirection(direction, 10);
 								updateHeadlessBody();
 								decEffectsDuration();
 								if (isUnderEffect(Effects.CONSTANTLY_CHANGES_SPEED_TO_RANDOM))
-									framesPerStep = new SecureRandom().nextInt(105) + 15;
+									framesPerStep = Game.random.nextInt(105) + 15;
 								else if (isUnderEffect(Effects.QUAD_SPEED))
 									framesPerStep = 5;
 								else if (isUnderEffect(Effects.DOUBLE_SPEED))
@@ -234,6 +269,9 @@ public class Snake extends Position {
 		}
 	}
 	
+	private boolean isCentered()
+		{ return getX() % Main.getDotSize() == 0 && getY() % Main.getDotSize() == 0; }
+
 	public void dropBodyAsWall(int pos) {
 		Game.drawBG(body.subList(pos + 1, body.size()));
 		cutBodyFrom(pos);

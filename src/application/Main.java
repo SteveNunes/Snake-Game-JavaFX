@@ -11,8 +11,11 @@ import javafx.stage.Stage;
 
 public class Main extends Application {
 	
-	private final static int screenW = 800;
-	private final static int screenH = 600;
+	private final static int dotSize = 30;
+	private final static int screenW = 1430;
+	private final static int screenH = 790;
+	private final static int maxWidth = dotSize * 46;
+	private final static int maxHeight = dotSize * 24;
 	private static Canvas gameBGCanvas;
 	private static Canvas gameFruitCanvas;
 	private static Canvas gameSnakeCanvas;
@@ -54,6 +57,15 @@ public class Main extends Application {
 	
 	public static int getScreenHeight()
 		{ return (int)gameSnakeCanvas.getHeight(); }
+
+	public static int getMaxWidth()
+		{ return maxWidth; }
+
+	public static int getMaxHeight()
+		{ return maxHeight; }
+
+	public static int getDotSize()
+		{ return dotSize; }
 
 	@Override
 	public void start(Stage stage) {
