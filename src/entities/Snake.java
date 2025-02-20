@@ -129,11 +129,11 @@ public class Snake extends Position {
 	
 	private Direction directionThroughEffect(Direction direction) {
 		if (isUnderEffect(Effects.CLOCKWISE_CONTROLS))
-			return direction.getClockwiseDirection(2);
+			return direction.getNext4WayClockwiseDirection(2);
 		if (isUnderEffect(Effects.REVERSE_CLOCKWISE_CONTROLS))
-			return direction.getClockwiseDirection(-2);
+			return direction.getPreview4WayClockwiseDirection(2);
 		if (isUnderEffect(Effects.REVERSE_CONTROLS))
-			return direction.getClockwiseDirection(4);
+			return direction.getNext4WayClockwiseDirection(4);
 		return direction;
 	}
 	

@@ -13,7 +13,7 @@ import entities.Wall;
 import enums.Direction;
 import enums.Effects;
 import enums.GameMode;
-import gameutil.FPSHandler;
+import gameutil.GameUtils;
 import gameutil.KeyHandler;
 import gui.util.ImageUtils;
 import javafx.scene.canvas.Canvas;
@@ -26,7 +26,6 @@ import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.scene.text.TextAlignment;
 import objmoveutils.Position;
-import util.Misc;
 
 public class Game {
 	
@@ -34,13 +33,13 @@ public class Game {
 	private static Image sprites = ImageUtils.removeBgColor(new Image("file:Sprites\\sprites.png"), Color.valueOf("#326496"), 0);
 	private static Image arena = new Image("file:Sprites\\arenas\\01.png");
 	private static Menu mainMenu;
-	private static FPSHandler fpsHandler = new FPSHandler(60);
 	private static GameMode gameMode = GameMode.LOCAL_MULTIPLAYER;
 	private static Snake mySnake = null;
 	private static int framesPerStep = 5; //30
 	private static int minSnaekSize = 6;
 	private static Font fruitFont = new Font("Arial", 15);
 	private static int dotSize = 20;
+	private static int elapsedFrames = 0;
 	
 	public static int getDotSize()
 		{ return dotSize; }
@@ -94,24 +93,21 @@ public class Game {
 	}
 
 	private static void gameLoop() {
-		int snakeId = 0;
-		KeyHandler.holdKeyPoll();
-		if (fpsHandler.ableToDraw())
+		GameUtils.createTimeLine(60, b -> !Main.windowsIsOpen(), () -> {
+			int snakeId = 0;
+			KeyHandler.holdKeyPoll();
 			clearCanvas(Main.getSnakeCanvas());
-		
-		for (Snake snake : Snake.getSnakes()) {
-			checkIfSnakeEnteredInAHole(snake);
-			checkIfSnakeAteAFruit(snake);
-			checkIfSnakeColidedWithOtherSnake(snake);
-			drawSnake(snakeId);
-			snakeId++;
-		}
-
-		fpsHandler.fpsCounter();
-		Main.getMainStage().setTitle("JavaFX Snake - CPS: " + fpsHandler.getCPS() + " FPS: " + fpsHandler.getFPS());
-		
-		if (Main.windowsIsOpen())
-			Misc.runLater(() -> gameLoop());
+			
+			for (Snake snake : Snake.getSnakes()) {
+				checkIfSnakeEnteredInAHole(snake);
+				checkIfSnakeAteAFruit(snake);
+				checkIfSnakeColidedWithOtherSnake(snake);
+				drawSnake(snakeId);
+				snakeId++;
+			}
+			elapsedFrames++;
+//			Main.getMainStage().setTitle("JavaFX Snake - CPS: " + fpsHandler.getCPS() + " FPS: " + fpsHandler.getFPS());
+		});
 	}
 	
 	private static int aliveSnakes()
@@ -195,22 +191,20 @@ public class Game {
 	
 	private static void drawSnake(int id) {
 		Snake snake = Snake.getSnakes().get(id);
-		Boolean draw = fpsHandler.ableToDraw() && (!snake.isUnderEffect(Effects.INVISIBLE_TO_MYSELF) ||
-			mySnake != null && snake == mySnake);
+		Boolean draw = !snake.isUnderEffect(Effects.INVISIBLE_TO_MYSELF) || mySnake != null && snake == mySnake;
 		GraphicsContext gc = Main.getSnakeCanvas().getGraphicsContext2D();
 		Position position = new Position();
 		Boolean dropBodyAsWall;
 		for (int n = snake.getBody().size() - 1, sprX, sprY; n >= 0; n--) {
 			position.setPosition(snake.getBody().get(n).getPosition());
-			dropBodyAsWall = snake.isUnderEffect(Effects.DROP_BODY_AS_WALL_AFTER_FEW_STEPS) && 
-				fpsHandler.getElapsedFrames() / 6 % 2 == 0 && n > minSnakeSize();
+			dropBodyAsWall = snake.isUnderEffect(Effects.DROP_BODY_AS_WALL_AFTER_FEW_STEPS) && elapsedFrames / 6 % 2 == 0 && n > minSnakeSize();
 			sprX = dropBodyAsWall ? 30 : n == 0 ? 15 : 0;
 			sprY = dropBodyAsWall ? 0 : snake.getDeadFrames() >= n ? 105 : id * 15;
 			if (draw)
 				gc.drawImage(sprites, sprX, sprY, 15, 15, position.getX(), position.getY(), Main.getDotSize(), Main.getDotSize());
 		}
-		int sprX = 30 + (snake.getDirection().getValue() == 0 ? 0 : snake.getDirection().getValue() / 2) * 15;
-		int sprY = snake.isUnderEffect(Effects.CAN_EAT_OTHERS) ? (fpsHandler.getElapsedFrames() / 5 % 2 == 0 ? 90 : 105) : 75;
+		int sprX = 30 + (snake.getDirection().get4DirValue() == 0 ? 0 : snake.getDirection().get4DirValue() * 15);
+		int sprY = snake.isUnderEffect(Effects.CAN_EAT_OTHERS) ? (elapsedFrames / 5 % 2 == 0 ? 90 : 105) : 75;
 		if (draw && !snake.isDead())
 			gc.drawImage(sprites, sprX, sprY, 15, 15, snake.getHead().getX(), snake.getHead().getY(), Main.getDotSize(), Main.getDotSize());
 		snake.move(-1);
