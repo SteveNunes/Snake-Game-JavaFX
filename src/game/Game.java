@@ -93,7 +93,7 @@ public class Game {
 	}
 
 	private static void gameLoop() {
-		GameUtils.createTimeLine(60, b -> !Main.windowsIsOpen(), () -> {
+		GameUtils.createAnimationTimer(60, (load, fps) -> !Main.windowsIsOpen(), () -> {
 			int snakeId = 0;
 			KeyHandler.holdKeyPoll();
 			clearCanvas(Main.getSnakeCanvas());
@@ -106,8 +106,7 @@ public class Game {
 				snakeId++;
 			}
 			elapsedFrames++;
-//			Main.getMainStage().setTitle("JavaFX Snake - CPS: " + fpsHandler.getCPS() + " FPS: " + fpsHandler.getFPS());
-		});
+		}).start();
 	}
 	
 	private static int aliveSnakes()
