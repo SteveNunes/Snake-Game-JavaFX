@@ -10,12 +10,14 @@ public enum GameMode {
 	
 	private final int value;
 
-	GameMode(int value)
-		{ this.value = value; }
-	
-	public int getValue()
-		{ return value; }
-	
+	GameMode(int value) {
+		this.value = value;
+	}
+
+	public int getValue() {
+		return value;
+	}
+
 	public static List<GameMode> getListOfAll() {
 		List<GameMode> list = new ArrayList<>();
 		list.add(SINGLE_PLAYER);
@@ -23,7 +25,7 @@ public enum GameMode {
 		list.add(ONLINE_MULTIPLAYER);
 		return list;
 	}
-	
+
 	public static String getName(GameMode mode) {
 		if (mode == SINGLE_PLAYER)
 			return "Single Player";
@@ -31,8 +33,9 @@ public enum GameMode {
 			return "Local multiplayer";
 		return "Online multiplayer";
 	}
-	
-	public String getName()
-		{ return getName(this); }
+
+	public String getName() {
+		return getName(this);
+	}
 
 }

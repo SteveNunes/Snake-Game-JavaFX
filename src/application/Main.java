@@ -10,7 +10,7 @@ import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 
 public class Main extends Application {
-	
+
 	private final static int dotSize = 30;
 	private final static int screenW = 1430;
 	private final static int screenH = 790;
@@ -23,49 +23,61 @@ public class Main extends Application {
 	private static Scene mainScene;
 	private static Boolean windowIsOpen;
 	private static int linearFiltering = 1;
-	
-	public static int getLiearFiltering()
-		{ return linearFiltering; }
+
+	public static int getLiearFiltering() {
+		return linearFiltering;
+	}
 
 	public static void setLiearFiltering(int liearFiltering) {
 		Main.linearFiltering = liearFiltering;
 		gameSnakeCanvas.getGraphicsContext2D().setEffect(new BoxBlur(1, 1, linearFiltering));
 		gameBGCanvas.getGraphicsContext2D().setEffect(new BoxBlur(1, 1, linearFiltering));
-		gameFruitCanvas.getGraphicsContext2D().setEffect(new BoxBlur(1, 1, linearFiltering));		
+		gameFruitCanvas.getGraphicsContext2D().setEffect(new BoxBlur(1, 1, linearFiltering));
 	}
 
-	public static Boolean windowsIsOpen()
-		{ return windowIsOpen; }
-	
-	public static Stage getMainStage()
-		{ return mainStage; }
+	public static Boolean windowsIsOpen() {
+		return windowIsOpen;
+	}
 
-	public static Scene getMainScene()
-		{ return mainScene; }
-	
-	public static Canvas getGameBGCanvas()
-		{ return gameBGCanvas; }	
+	public static Stage getMainStage() {
+		return mainStage;
+	}
 
-	public static Canvas getGameFruitCanvas()
-		{ return gameFruitCanvas; }	
+	public static Scene getMainScene() {
+		return mainScene;
+	}
 
-	public static Canvas getSnakeCanvas()
-		{ return gameSnakeCanvas; }
+	public static Canvas getGameBGCanvas() {
+		return gameBGCanvas;
+	}
 
-	public static int getScreenWidth()
-		{ return (int)gameSnakeCanvas.getWidth(); }
-	
-	public static int getScreenHeight()
-		{ return (int)gameSnakeCanvas.getHeight(); }
+	public static Canvas getGameFruitCanvas() {
+		return gameFruitCanvas;
+	}
 
-	public static int getMaxWidth()
-		{ return maxWidth; }
+	public static Canvas getSnakeCanvas() {
+		return gameSnakeCanvas;
+	}
 
-	public static int getMaxHeight()
-		{ return maxHeight; }
+	public static int getScreenWidth() {
+		return (int) gameSnakeCanvas.getWidth();
+	}
 
-	public static int getDotSize()
-		{ return dotSize; }
+	public static int getScreenHeight() {
+		return (int) gameSnakeCanvas.getHeight();
+	}
+
+	public static int getMaxWidth() {
+		return maxWidth;
+	}
+
+	public static int getMaxHeight() {
+		return maxHeight;
+	}
+
+	public static int getDotSize() {
+		return dotSize;
+	}
 
 	@Override
 	public void start(Stage stage) {

@@ -65,40 +65,49 @@ public enum Effects {
 	final static List<Effects> notAbleToAcelerate = 
 		Arrays.asList(MIN_SPEED, HALF_SPEED, STOP, DOUBLE_SPEED, QUAD_SPEED, CONSTANTLY_CHANGES_SPEED_TO_RANDOM, CANT_SPEED_UP_HOLDING_KEY);
 
+	Effects(char val) {
+		value = val;
+	}
 
-	Effects(char val)
-		{ value = val; }
-	
-	public char getValue()
-		{ return value; }
-	
-	public static Boolean isFriendly(Effects effect)
-		{ return effectsDuration.get(effect) >= 0; }
-	
-	public static Boolean notAbleToAcelerateByHoldingKey(Effects effect)
-		{ return notAbleToAcelerate.contains(effect); }
-	
-	public Boolean notAbleToAcelerateByHoldingKey()
-		{ return notAbleToAcelerateByHoldingKey(this); }
+	public char getValue() {
+		return value;
+	}
 
-	public Boolean isFriendly()
-		{ return isFriendly(this); }
+	public static Boolean isFriendly(Effects effect) {
+		return effectsDuration.get(effect) >= 0;
+	}
 
-	public static Effects causeEffectOnOthers(Effects effect)
-		{ return !causeEffectOnOthers.containsKey(effect) ? null : causeEffectOnOthers.get(effect); }
-	
-	public Effects causeEffectOnOthers()
-		{ return causeEffectOnOthers(this); }
+	public static Boolean notAbleToAcelerateByHoldingKey(Effects effect) {
+		return notAbleToAcelerate.contains(effect);
+	}
+
+	public Boolean notAbleToAcelerateByHoldingKey() {
+		return notAbleToAcelerateByHoldingKey(this);
+	}
+
+	public Boolean isFriendly() {
+		return isFriendly(this);
+	}
+
+	public static Effects causeEffectOnOthers(Effects effect) {
+		return !causeEffectOnOthers.containsKey(effect) ? null : causeEffectOnOthers.get(effect);
+	}
+
+	public Effects causeEffectOnOthers() {
+		return causeEffectOnOthers(this);
+	}
 
 	public static int getDuration(Effects effect) {
 		int val = effectsDuration.get(effect);
 		return Math.abs(val);
 	}
-	
-	public int getDuration()
-		{ return getDuration(this); }
-	
-	public static List<Effects> getListOfAll()
-		{ return listOfAll; }
-	
+
+	public int getDuration() {
+		return getDuration(this);
+	}
+
+	public static List<Effects> getListOfAll() {
+		return listOfAll;
+	}
+
 }
